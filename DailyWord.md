@@ -75,3 +75,19 @@ Ngày 6: 08/07/2026
  - Về lỗi khóa file: Nhấp vào Terminal và nhấn tổ hợp phím Ctrl + C để tắt hẳn tiến trình chạy ngầm cũ. Sau đó gõ dotnet run, chương trình đã biên dịch và chạy thành công 100%, không còn lỗi tồn đọng.
 /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
 Ngày 7: 09/07/2026
+- Nội dung lý thuyết:
+ - Ngăn xếp (Stack): Hoạt động theo cơ chế LIFO (Last In, First Out - Vào sau, ra trước). Đây là cấu trúc dữ liệu cơ bản để quản lý tiến trình (Call Stack của hàm) và các tính năng quay lui (Undo/Redo).
+ - Hàng đợi (Queue): Hoạt động theo cơ chế FIFO (First In, First Out - Vào trước, ra trước). Cực kỳ quan trọng trong việc xây dựng bộ đệm (Buffer) để xử lý dữ liệu truyền thông hoặc quản lý hàng đợi tin nhắn (Message Queue), giúp hệ thống không bị "nghẽn cổ chai" khi dữ liệu về quá nhanh.
+- Nội dung thực hành:
+ - Hoàn thành bài tập: Giả lập bộ đệm tín hiệu Serial.
+ - Triển khai cấu trúc Queue<string> để lưu trữ dữ liệu từ cảm biến gửi về.
+ - Viết hàm Background định kỳ lấy dữ liệu ra khỏi Queue để xử lý, đảm bảo luồng chính (Main thread) không bị treo.
+- Vướng mắc/Bug gặp phải là gì?
+ - tranh chấp dữ liệu (Race condition) khi nhiều luồng cùng truy cập Queue.
+ - gặp 1 số lỗi tràn dữ liệu , tràn bộ nhớ .
+ - 1 số dòng code chưa được tối ưu .
+- Đã giải quyết thế nào/Cần Mentor hỗ trợ gì?
+ - Không dùng từ khóa lock (truy cập trực tiếp), Sử dụng lock (_queueLock) hoặc chuyển sang dùng ConcurrentQueue<T>. vì trong lập trình đa luồng (IoT/Serial), nếu em code và không khóa hoặc dùng cấu trúc an toàn, dữ liệu sẽ bị ghi đè hoặc gây lỗi InvalidOperationException.
+ - Em đã sử dụng lock (_queueLock) để bao bọc quá trình Enqueue và Dequeue, giúp chương trình chạy ổn định mà không bị xung đột dữ liệu giữa luồng đọc Serial và luồng xử lý chính
+/~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
+Ngày 8: 10/07/2026

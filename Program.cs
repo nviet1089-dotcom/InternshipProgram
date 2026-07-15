@@ -67,7 +67,7 @@ class Program
         
         string input; 
         
-        Console.WriteLine("\n--- NHAP NHIET DO ---");
+        Console.WriteLine("\n--- NHIET DO tai cam bien ---");
         while(true)
         {
             Console.Write("nhap nhiet do do (nhap 'ok' de dung): ");
@@ -124,8 +124,10 @@ class Program
            if(parts[0] != "LOG") return false;
            // gan ep du lieu
            if(!DateTime.TryParse(parts[1], out date )) return false;
-           if(!double.TryParse(parts[2], out temp)) return false;
-           if(!double.TryParse(parts[3], out waterlevel) ) return false;
+           if (!double.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out temp)) return false;
+        //CultureInfo.InvariantCulture ham nay ep may tinh su dung dau '.' la dau danh dau thap phan
+           if (!double.TryParse(parts[3], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out waterlevel)) return false;
+        //System.Globalization ham nay giup may tinh fix loi khong co dau '.' vd 26.8
            return true;// phai dung true neu dung false khong tra ve du lieu
         }
         catch
@@ -168,7 +170,7 @@ class Program
                     if(ArduinoData(item, out DateTime date,out double temp ,out double waterlevel))
                     {
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
-                        Console.WriteLine($"log ngay:{date:yyyy-MM-dd} , nhiet do:{temp} do , muc nuoc:{waterlevel}cm ");
+                        Console.WriteLine($"log ngay:{date:yyyy-MM-dd} , nhiet do:{temp:F1} do , muc nuoc:{waterlevel}cm ");
                         Console.ResetColor();
                     }
                     else
