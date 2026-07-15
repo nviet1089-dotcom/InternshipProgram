@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic; // list
 using System.Linq;
+using System.Threading.Tasks;
+using System.Globalization;
 // cam bien nhiet do
 public class CamBienNhietDo : ThietBiDo , IConnectable
 {
@@ -16,7 +18,7 @@ public class CamBienNhietDo : ThietBiDo , IConnectable
     {
         LichSuDo.Add(nhietDo);
     }
-    public override void TrangThai()
+    public override void TrangThaiHoatDong()
     {
         Console.WriteLine($"trang thai hoat dong:true");
     }

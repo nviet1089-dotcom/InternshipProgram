@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic; // list
 using System.Linq;
+using System.Threading.Tasks;
+using System.Globalization;
 public class CumCamera : ThietBiDo , IConnectable
+// tinh da hinh va ke thua
 {
     public string MaThietBiCamera {get; set; } = string.Empty;
     public override void MaThietBi()
@@ -9,7 +12,7 @@ public class CumCamera : ThietBiDo , IConnectable
         base.MaThietBi();
         Console.WriteLine(MaThietBiCamera);
     }
-    public override void TrangThai()
+    public override void TrangThaiHoatDong()
     {
         Console.WriteLine($"trang thai hoat dong:true");
     }

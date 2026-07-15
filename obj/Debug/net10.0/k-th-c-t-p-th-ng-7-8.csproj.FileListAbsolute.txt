@@ -1,0 +1,15 @@
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\bin\Debug\net10.0\k-th-c-t-p-th-ng-7-8.exe
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\bin\Debug\net10.0\k-th-c-t-p-th-ng-7-8.deps.json
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\bin\Debug\net10.0\k-th-c-t-p-th-ng-7-8.runtimeconfig.json
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\bin\Debug\net10.0\k-th-c-t-p-th-ng-7-8.dll
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\bin\Debug\net10.0\k-th-c-t-p-th-ng-7-8.pdb
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.AssemblyInfoInputs.cache
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.AssemblyInfo.cs
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.csproj.CoreCompileInputs.cache
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.sourcelink.json
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.dll
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\refint\k-th-c-t-p-th-ng-7-8.dll
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.pdb
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\k-th-c-t-p-th-ng-7-8.genruntimeconfig.cache
+C:\Users\surface laptop\Documents\clone github cua mentor\InternshipProgram\obj\Debug\net10.0\ref\k-th-c-t-p-th-ng-7-8.dll
