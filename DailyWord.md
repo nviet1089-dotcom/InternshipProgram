@@ -17,17 +17,17 @@ Nhật kí hằng ngày. ngày thứ 2 : 05/ 07/ 2026
 Em đã hoàn thành các nội dung kiến thức của ngày 2 theo lộ trình:
 - Hôm nay làm được gì?
 Nội dung lý thuyết:
- -Hiểu sâu về tính Đóng gói (Encapsulation) trong OOP: Tại sao cần che giấu dữ liệu và cách bảo vệ tính toàn vẹn của đối tượng.
- -Phân biệt và nắm rõ phạm vi sử dụng của các Access Modifiers: private, public, protected, internal.
- -Làm quen với cách viết Getter/Setter và đặc biệt là cách sử dụng Properties trong C# để kiểm soát logic gán dữ liệu.
+ - Hiểu sâu về tính Đóng gói (Encapsulation) trong OOP: Tại sao cần che giấu dữ liệu và cách bảo vệ tính toàn vẹn của đối tượng.
+ - Phân biệt và nắm rõ phạm vi sử dụng của các Access Modifiers: private, public, protected, internal.
+ - Làm quen với cách viết Getter/Setter và đặc biệt là cách sử dụng Properties trong C# để kiểm soát logic gán dữ liệu.
 Nội dung thực hành:
- -Hoàn thành bài tập cập nhật class CanNhua: Chuyển đổi các thuộc tính sang private.
- -Xây dựng phương thức gán giá trị (Setter) cho MucNuocHienTai kèm theo điều kiện (kiểm tra không cho phép giá trị âm hoặc vượt quá dung tích tối đa).
+ - Hoàn thành bài tập cập nhật class CanNhua: Chuyển đổi các thuộc tính sang private.
+ - Xây dựng phương thức gán giá trị (Setter) cho MucNuocHienTai kèm theo điều kiện (kiểm tra không cho phép giá trị âm hoặc vượt quá dung tích tối đa).
 - Vướng mắc/Bug gặp phải là gì?
- -Khi mới bắt đầu chuyển đổi sang Properties trong C#, em gặp khó trong việc hiểu cách sử dụng value vào khối set.
- -Việc xử lý thông báo lỗi trong setter cho chuẩn cũng là 1 điều mới và cần sử dụng nhiều lần.
+ - Khi mới bắt đầu chuyển đổi sang Properties trong C#, em gặp khó trong việc hiểu cách sử dụng value vào khối set.
+ - Việc xử lý thông báo lỗi trong setter cho chuẩn cũng là 1 điều mới và cần sử dụng nhiều lần.
 - Đã giải quyết thế nào/Cần Mentor hỗ trợ gì?
- -Cách giải quyết: Em đã tìm hiểu tài liệu về value keyword trong C# và thực hiện test các trường hợp biên (nhập 0, nhập số âm, nhập vượt mức) để đảm bảo class hoạt động đúng yêu cầu.
+ - Cách giải quyết: Em đã tìm hiểu tài liệu về value keyword trong C# và thực hiện test các trường hợp biên (nhập 0, nhập số âm, nhập vượt mức) để đảm bảo class hoạt động đúng yêu cầu.
  -nhận thêm bài tập được AI cho thêm để luyện kĩ năng, hiều bài và cách sử dụng C#
  /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
 Ngày 3: 05/07/2026
@@ -91,3 +91,12 @@ Ngày 7: 09/07/2026
  - Em đã sử dụng lock (_queueLock) để bao bọc quá trình Enqueue và Dequeue, giúp chương trình chạy ổn định mà không bị xung đột dữ liệu giữa luồng đọc Serial và luồng xử lý chính
 /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
 Ngày 8: 10/07/2026
+ Nội dung lý thuyết:
+ - em hiểu được Khái niệm cặp Khóa - Giá trị (Key - Value): Là cấu trúc lưu trữ dữ liệu gồm một Khóa (Key) duy nhất đóng vai trò làm định danh (như Mã thiết bị "CAM_01") và một Giá trị (Value) đi kèm (như đối tượng thiết bị chứa thông tin tên, trạng thái).
+ - nắm rõ được Bản chất toán học của Hàm băm (Hash function): Hàm băm nhận đầu vào là một Khóa (Key) có độ dài bất kỳ, tính toán và chuyển đổi nó thành một chỉ số số nguyên (Hash Code) cố định. Chỉ số này trỏ thẳng tới một vị trí ô nhớ trong bộ mảng vật lý bên dưới.
+ - em tìm hiểu được về Cơ chế tìm kiếm với độ phức tạp $O(1)$: Nhờ hàm băm tính toán ra ngay vị trí ô nhớ của dữ liệu mà không cần tìm kiếm tuần tự, thời gian truy xuất dữ liệu luôn là hằng số (không đổi) dù hệ thống có quản lý hàng ngàn hay hàng triệu thiết bị.
+ - Và cũng hiểu và so sánh được với list trong ngày 6 giống và khác đồng thời thấy dược điểm tối ưu như nào.
+ Nội dung thưucj hành:
+ - Em đã hoàn thành toàn bộ các yêu cầu đồng thời kết hợp với project để chạy dược đồng thời.
+ /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
+ 

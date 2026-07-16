@@ -1,8 +1,10 @@
 using System;
+using System.IO;
 using System.Collections.Generic; // list
 using System.Linq;// thuc hien cac phep 
 using System.Threading.Tasks;
 using System.Globalization;// xu ly dau cham trong day 
+// InternshipProgram
 // --- NoI CHaY CHuoNG TRiNH ---
 class Program
 {
@@ -19,17 +21,19 @@ class Program
         _deviceRegistry.Add("CAM_01", new ThietBiDo { TenThietBi = "Camera Cổng", TrangThai = "OFF" });
         _deviceRegistry.Add("TEMP_01", new ThietBiDo { TenThietBi = "Cảm biến Nhiệt", TrangThai = "OFF" }); 
         //them ham de khoi dong
-        Task.Run(() => BackgroundProcessor());   
-        Task.Run(() => SensorSimulator());
+        //Task.Run(() => BackgroundProcessor());   
+        //Task.Run(() => SensorSimulator());
         
         Console.WriteLine("--- CAN NHUA ---");
         CanNhua CaNhuaThu1 = new CanNhua(5.5, 30.0);
         while (true)
         {
             Console.WriteLine("Nhap muc nuoc hien tai (0 - 5.5):");
-            string inputMucNuoc = Console.ReadLine() ?? string.Empty; 
-            if (double.TryParse(inputMucNuoc, out double MucNuoc) && MucNuoc >= 0 && MucNuoc <= 5.5)
-            {
+            string inputMucNuoc = Console.ReadLine() ?? string.Empty; // tranh loi null
+            if (double.TryParse(inputMucNuoc, out double MucNuoc))
+            {// chinh sua lai logic de donh nhat voi file CaNhua.cs va file program 
+                if (MucNuoc >= 0 && MucNuoc <= CaNhuaThu1.DungTichToiDaCuaCaNhuaThu1)
+               {
                 CaNhuaThu1.MucNuocHienTaiCuaCaNhuaThu1 = MucNuoc;
                 Console.WriteLine("Thong tin da duoc tiep nhan");
                 break;
@@ -39,8 +43,27 @@ class Program
                 Console.WriteLine("Thong tin sai, yeu cau nhap lai:");
             }
         }
+        else
+            {
+                Console.WriteLine("dinh dang sai yeu cau chinh sua lai:");
+            }
+        }
         Console.WriteLine($"Muc Nuoc Hien Tai Trong Ca: {CaNhuaThu1.MucNuocHienTaiCuaCaNhuaThu1}");
 
+
+        // bai 10 nhap va chay thu giai lap chia cac so voi cau truc try catch finally
+        Console.WriteLine("\n CHAY THU PHEP CHIA DU LIEU CUA CAM BIEN GUI VE");
+        Console.WriteLine("NHAP CHUOI GIA LAP CAM BIEN CO DANG( 100,0 ) VUI LONG NHAP:" );
+        Console.WriteLine("VUI LONG NHAP:");
+
+        string chuoiThoInput = Console.ReadLine() ?? string.Empty;
+
+        double ketQuaChia = SensorService.ChiaDuLieuCuaCamBien(chuoiThoInput);
+        Console.WriteLine($"=> Kết quả xử lý cuối cùng: {ketQuaChia}");
+
+
+
+        // bai cua tuan truoc
         Console.WriteLine("--- THIeT Bi DO ---");
         
         List<ThietBiDo> danhSachThietBi = new List<ThietBiDo>();
@@ -96,8 +119,17 @@ class Program
         {
             Console.Write($"khong the tinh duoc!!!");
         }
-
-        Console.WriteLine("nhan enter de dung lai gai lap");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        // thay chay giai lap o day de ctrinh chay muot ma hon
+        Console.WriteLine("\n======================================================");
+        Console.WriteLine("      ket thuc nhap du lieu    !!!!!!!");
+        Console.WriteLine("\n   VUI LONG CHO TRONG GIAY LAT       ");
+        Console.WriteLine("    BAT DAU CHAY GIA LAP VA BACKGROUND !!!");
+        Console.WriteLine("\n======================================================");
+        Console.ResetColor();
+        // chuyen giai lap xuong day 
+        Task.Run(() => BackgroundProcessor());   
+        Task.Run(() => SensorSimulator());
         Console.ReadLine();
 
     }    
@@ -125,8 +157,10 @@ class Program
            // gan ep du lieu
            if(!DateTime.TryParse(parts[1], out date )) return false;
            if (!double.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out temp)) return false;
+        // if(!double.TryParse(parts[2], out temp)) return;
         //CultureInfo.InvariantCulture ham nay ep may tinh su dung dau '.' la dau danh dau thap phan
            if (!double.TryParse(parts[3], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out waterlevel)) return false;
+        // // if(!double.TryParse(parts[2], out waterlevel)) return;
         //System.Globalization ham nay giup may tinh fix loi khong co dau '.' vd 26.8
            return true;// phai dung true neu dung false khong tra ve du lieu
         }
@@ -140,7 +174,7 @@ class Program
      {
         while (true)
         {
-            await Task.Delay(3000);
+            await Task.Delay(10000);
             
                 List<string> itemsToProcess = new List<string>();
 
@@ -172,6 +206,9 @@ class Program
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
                         Console.WriteLine($"log ngay:{date:yyyy-MM-dd} , nhiet do:{temp:F1} do , muc nuoc:{waterlevel}cm ");
                         Console.ResetColor();
+
+                        // them de biet duoc day la cua file CSV
+                        Logger.LogCSV(date, temp, waterlevel);
                     }
                     else
                     {
@@ -224,18 +261,18 @@ class Program
      }
      static void RunTest()
 {
-    // Chuỗi dữ liệu bạn muốn test
+    // Chuoi du lieu ban muon test
     string testData = "$LOG,2026-07-03,28.5,45#";
 
-    Console.WriteLine("--- CHẾ ĐỘ TEST ---");
-    Console.WriteLine($"Đang đẩy chuỗi: {testData}");
+    Console.WriteLine("--- CHe do TEST ---");
+    Console.WriteLine($"dang day chuoi: {testData}");
 
     lock (_queueLock) 
     { 
         _sensorQueue.Enqueue(testData); 
     }
 }
-     // gia lap cứ 1s gui du lieu
+     // gia lap cu 1s gui du lieu
     static async Task SensorSimulator()
     {
         //string testData = "$LOG,2026-07-03,28.5,45#";
@@ -245,7 +282,7 @@ class Program
         //dat vong lap
         while (true)
         {
-            await Task.Delay(3000); // thoi gian chay 1p
+            await Task.Delay(10000); // thoi gian chay 1p
 
             string data = $"AUTO_SENSOR | Temp: {rand.Next(20, 35)}°C | Time: {DateTime.Now:HH:mm:ss}";
             lock (_queueLock) { _sensorQueue.Enqueue(data); }
@@ -258,7 +295,5 @@ class Program
             lock (_queueLock) { _sensorQueue.Enqueue($"DEV:{randomId}:{status}"); }
         }
     }    
-    
-    
 
 }

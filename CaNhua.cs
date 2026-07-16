@@ -1,7 +1,9 @@
 using System;
+using System.IO;
 using System.Collections.Generic; // list
-using System.Linq;
-using System.Globalization;
+using System.Linq;// thuc hien cac phep 
+using System.Threading.Tasks;
+using System.Globalization;// xu ly dau cham trong day 
 //ngay 1 2 bai tap tao class (thuoc tinh va phuong thuc) co su dung dong goi
 class CanNhua
 {
@@ -20,6 +22,7 @@ class CanNhua
             else
             {
                 Console.WriteLine($"loi: dung tich toi thieu la 5 va toi da la 15!!!");
+                DungTichToiDa = 5.0;// tao gia tri an toan 
             }
         }
     }
