@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Globalization;
 
+// bai tap ngay 10 
 public static class SensorService
 {
     public static double ChiaDuLieuCuaCamBien(string rawSensorData)

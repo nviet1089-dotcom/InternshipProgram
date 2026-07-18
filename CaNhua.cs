@@ -4,14 +4,12 @@ using System.Collections.Generic; // list
 using System.Linq;// thuc hien cac phep 
 using System.Threading.Tasks;
 using System.Globalization;// xu ly dau cham trong day 
-//ngay 1 2 bai tap tao class (thuoc tinh va phuong thuc) co su dung dong goi
 class CanNhua
 {
     //tinh dong goi 
     private double DungTichToiDa;
     private double ChieuCaoCan;
     private double MucNuocHienTai;
-// them thuc tinh chp dung tic toi da va chieu cao
     public double DungTichToiDaCuaCaNhuaThu1
     {
         get { return DungTichToiDa;}

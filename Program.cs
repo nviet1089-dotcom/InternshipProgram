@@ -13,13 +13,18 @@ class Program
     private static readonly object _queueLock = new object();
     // tạo dicrory
     private static Dictionary<string, ThietBiDo> _deviceRegistry = new Dictionary<string, ThietBiDo>();
+    // voi key la ma thiet bị string va value la doi tuong cua thietbido
     private static readonly object _dictLock = new object();
+    //Xử lý bất đồng bộ, đa luồng an toàn khi thiết bị giả lập gửi dữ liệu về liên tục.
+
     static void Main(string[] args)
     {
         
-        //tao thiet bi
-        _deviceRegistry.Add("CAM_01", new ThietBiDo { TenThietBi = "Camera Cổng", TrangThai = "OFF" });
-        _deviceRegistry.Add("TEMP_01", new ThietBiDo { TenThietBi = "Cảm biến Nhiệt", TrangThai = "OFF" }); 
+        //tao thiet bi cho dictionary voi cac ma thiet bi sau
+        _deviceRegistry.Add("CAM_01", new ThietBiDo { TenThietBi = "Camera Cong", TrangThai = "OFF" });
+        //key la cam01 cong con value la camera cong co gia tri trang thai la off
+        // tuong tu voi temp
+        _deviceRegistry.Add("TEMP_01", new ThietBiDo { TenThietBi = "Cam bien Nhiet", TrangThai = "OFF" }); 
         //them ham de khoi dong
         //Task.Run(() => BackgroundProcessor());   
         //Task.Run(() => SensorSimulator());
@@ -31,7 +36,7 @@ class Program
             Console.WriteLine("Nhap muc nuoc hien tai (0 - 5.5):");
             string inputMucNuoc = Console.ReadLine() ?? string.Empty; // tranh loi null
             if (double.TryParse(inputMucNuoc, out double MucNuoc))
-            {// chinh sua lai logic de donh nhat voi file CaNhua.cs va file program 
+            {
                 if (MucNuoc >= 0 && MucNuoc <= CaNhuaThu1.DungTichToiDaCuaCaNhuaThu1)
                {
                 CaNhuaThu1.MucNuocHienTaiCuaCaNhuaThu1 = MucNuoc;
@@ -51,18 +56,6 @@ class Program
         Console.WriteLine($"Muc Nuoc Hien Tai Trong Ca: {CaNhuaThu1.MucNuocHienTaiCuaCaNhuaThu1}");
 
 
-        // bai 10 nhap va chay thu giai lap chia cac so voi cau truc try catch finally
-        Console.WriteLine("\n CHAY THU PHEP CHIA DU LIEU CUA CAM BIEN GUI VE");
-        Console.WriteLine("NHAP CHUOI GIA LAP CAM BIEN CO DANG( 100,0 ) VUI LONG NHAP:" );
-        Console.WriteLine("VUI LONG NHAP:");
-
-        string chuoiThoInput = Console.ReadLine() ?? string.Empty;
-
-        double ketQuaChia = SensorService.ChiaDuLieuCuaCamBien(chuoiThoInput);
-        Console.WriteLine($"=> Kết quả xử lý cuối cùng: {ketQuaChia}");
-
-
-
         // bai cua tuan truoc
         Console.WriteLine("--- THIeT Bi DO ---");
         
@@ -78,13 +71,26 @@ class Program
                 Console.WriteLine("------------LOADING-----------");
                 thietBi.MaThietBi();
                 thietBi.TrangThaiHoatDong();
-            
+            // tinh truu tuong
                 if (thietBi is IConnectable thietBiKetNoi)
+                // gọi xem co ket noi theo chuan truu tuong hay khong
                 {
+                
                     thietBiKetNoi.ConnectSerial();
                 }
            }
         }
+
+        Console.WriteLine("\n CHAY THU PHEP CHIA DU LIEU CUA CAM BIEN GUI VE");
+        Console.WriteLine("NHAP CHUOI GIA LAP CAM BIEN CO DANG( 100,0 ) VUI LONG NHAP:" );
+        Console.WriteLine("VUI LONG NHAP:");
+
+        string chuoiThoInput = Console.ReadLine() ?? string.Empty;
+
+        double ketQuaChia = SensorService.ChiaDuLieuCuaCamBien(chuoiThoInput);
+        Console.WriteLine($"=> Kết quả xử lý cuối cùng: {ketQuaChia}");
+
+
 
         List<double> LichSuDo = new List<double>();
         
@@ -120,76 +126,88 @@ class Program
             Console.Write($"khong the tinh duoc!!!");
         }
         Console.ForegroundColor = ConsoleColor.Yellow;
-        // thay chay giai lap o day de ctrinh chay muot ma hon
+        // thay chay gia lap o day de ctrinh chay muot ma hon
         Console.WriteLine("\n======================================================");
         Console.WriteLine("      ket thuc nhap du lieu    !!!!!!!");
         Console.WriteLine("\n   VUI LONG CHO TRONG GIAY LAT       ");
         Console.WriteLine("    BAT DAU CHAY GIA LAP VA BACKGROUND !!!");
         Console.WriteLine("\n======================================================");
         Console.ResetColor();
-        // chuyen giai lap xuong day 
+        // chuyen gia lap xuong day 
         Task.Run(() => BackgroundProcessor());   
         Task.Run(() => SensorSimulator());
         Console.ReadLine();
 
     }    
     // phuong thuc su li bai9 
-    public static bool ArduinoData(string rawData , out DateTime date , out double temp , out double waterlevel )
+   public static bool ArduinoData(string rawData, out DateTime date, out double temp, out double waterlevel)
+{
+    date = DateTime.MinValue;
+    temp = 0.0;
+    waterlevel = 0.0;
+
+    if (string.IsNullOrWhiteSpace(rawData) || !rawData.StartsWith("$LOG,") || !rawData.EndsWith("#"))
     {
-        date = DateTime.MinValue ;
-        temp = 0.0 ;
-        waterlevel = 0.0 ;
-        // xet tinh toan ven cua chuoi 
-        if(string.IsNullOrEmpty(rawData) || !rawData.StartsWith("$LOG,") || !rawData.EndsWith("#"))
-        {
-            return false;
-        }
-        try
-        {
-           // lam sach chuoi  
-           string cleanData = rawData.TrimEnd('#').Substring(1);
-           // tach dau ","
-           string[] parts = cleanData.Split(',');
-           // xac dinh so luong phan tu co du khong
-           if(parts.Length !=4) return false;
-           // kiem tra dinh danh log 
-           if(parts[0] != "LOG") return false;
-           // gan ep du lieu
-           if(!DateTime.TryParse(parts[1], out date )) return false;
-           if (!double.TryParse(parts[2], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out temp)) return false;
-        // if(!double.TryParse(parts[2], out temp)) return;
-        //CultureInfo.InvariantCulture ham nay ep may tinh su dung dau '.' la dau danh dau thap phan
-           if (!double.TryParse(parts[3], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out waterlevel)) return false;
-        // // if(!double.TryParse(parts[2], out waterlevel)) return;
-        //System.Globalization ham nay giup may tinh fix loi khong co dau '.' vd 26.8
-           return true;// phai dung true neu dung false khong tra ve du lieu
-        }
-        catch
-        {
-            return false;
-        }
+        return false;
     }
-    // tao background
+
+    try
+    {
+        string cleanData = rawData.TrimStart('$').TrimEnd('#');
+        string[] parts = cleanData.Split(',');
+
+        if (parts.Length != 4 || parts[0] != "LOG") 
+        {
+            return false;
+        }
+
+        if (!DateTime.TryParse(parts[1], CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) 
+        {
+            return false;
+        }
+
+        if (!double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out temp)) 
+        {
+            return false;
+        }
+
+        if (!double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out waterlevel)) 
+        {
+            return false;
+        }
+
+        return true; 
+    }
+    catch
+    {
+        return false; 
+    }
+}
     static async Task BackgroundProcessor()
      {
         while (true)
         {
             await Task.Delay(10000);
             
+                // khởi tạo danh sách kiểu chuỗi để chứa các gói tin chuẩn bị được nôi ra khỏi hàm queue
                 List<string> itemsToProcess = new List<string>();
 
+                //khoa va lay du lieu tu queue ra de xu li 
                 lock (_queueLock)
                 {
                    while (_sensorQueue.Count > 0)
                 {
+                    // lay goi tin ra khoi queue hang doi va nap vao danh sach tam thoi 
                     itemsToProcess.Add(_sensorQueue.Dequeue());
                 }
                 }
 
+                    // xu li goi tin da lay ra đảm bảo trong danh sách có ít nhất 1 phần tử 
                     if (itemsToProcess.Count > 0)
                 {
                    Console.ForegroundColor = ConsoleColor.DarkRed;
                    Console.WriteLine($"\n[Background] Xu ly {itemsToProcess.Count} goi tin tu Queue:");
+                   //duyệt gói tin trong danh sách tạm thời để in gói tin ra màn hình 
                    foreach (var item in itemsToProcess)
                        {
                          Console.WriteLine($"   => {item}");
@@ -199,6 +217,7 @@ class Program
        
                  foreach (var item in itemsToProcess)
                 {
+                    //kiểm tra định dạng của chuôi giả lập arduino gửi về 
                     if(item.StartsWith("$LOG") && item.EndsWith("#"))
                 {
                     if(ArduinoData(item, out DateTime date,out double temp ,out double waterlevel))
@@ -207,7 +226,7 @@ class Program
                         Console.WriteLine($"log ngay:{date:yyyy-MM-dd} , nhiet do:{temp:F1} do , muc nuoc:{waterlevel}cm ");
                         Console.ResetColor();
 
-                        // them de biet duoc day la cua file CSV
+                        // gọi hàm kết nối file cua class logger  CSV bai 11 
                         Logger.LogCSV(date, temp, waterlevel);
                     }
                     else
@@ -220,29 +239,35 @@ class Program
                 string[] parts = item.Split(':');
                 if (parts.Length < 2) continue; // neu loi ham nay giup bo qua
 
-                string prefix = parts[0];
+                string prefix = parts[0];// lấy phần tử đầu tiên 
 
                 // xu li thiet bi
                 if (prefix == "DEV") 
                 {
-                    // dinh dang cho id
+                    // dinh dang cho id cua day 8 
+                    //ktra xem gói tin có đầy đủ 3 thành phần không 
                     if (parts.Length >= 3)
                     {
                         string id = parts[1];
                         string newStatus = parts[2];
 
-                        lock (_dictLock)//su dung tu khoa lock
+                        lock (_dictLock)//su dung de dam bao an toan khi truy cap dictonary luc dang cap nhat
                         {
+                            // dua key vao xu li nhan ra value
                             if (_deviceRegistry.TryGetValue(id, out ThietBiDo thietBi))
+                            // khong dung for nen doi su dung TryGetValue de do phuc tap trong thoi gian luon la O(1)
                             {
+                                // sau khi khoa lai ms chạy viec thay doi du ieu thiet bi
+                                //cap nhat trang thai ruc tiep vao doi tuong tren Ram 
                                 thietBi.TrangThai = newStatus;
                                 Console.WriteLine($"[Update] {thietBi.TenThietBi} ({id}) chuyen sang : {thietBi.TrangThai}");
                             }
                             else
                             {
+                                // xu li khi khong tim thay id thiet bi
                                 Console.WriteLine($"[Cảnh báo] ID thiet bi khong hop le : {id}");
                             }
-                        }
+                        }// mo khoa de chay luong du lieu khac 
                     }
                 }
                 // phan in nhiet do 
@@ -259,9 +284,9 @@ class Program
             
         }
      }
-     static void RunTest()
+     static void Test()
 {
-    // Chuoi du lieu ban muon test
+    // Chuoi du lieu ban muon test // bai 9 
     string testData = "$LOG,2026-07-03,28.5,45#";
 
     Console.WriteLine("--- CHe do TEST ---");
@@ -274,26 +299,24 @@ class Program
 }
      // gia lap cu 1s gui du lieu
     static async Task SensorSimulator()
+{
+    string[] ids = { "CAM_01", "TEMP_01" };
+    Random rand = new Random();
+
+    while (true)
     {
-        //string testData = "$LOG,2026-07-03,28.5,45#";
-        string[] ids = { "CAM_01", "TEMP_01" };
-        //random so lieu
-        Random rand = new Random();
-        //dat vong lap
-        while (true)
-        {
-            await Task.Delay(10000); // thoi gian chay 1p
+        await Task.Delay(10000); 
 
-            string data = $"AUTO_SENSOR | Temp: {rand.Next(20, 35)}°C | Time: {DateTime.Now:HH:mm:ss}";
-            lock (_queueLock) { _sensorQueue.Enqueue(data); }
+        string data = $"AUTO_SENSOR | Temp: {rand.Next(20, 35)}°C | Time: {DateTime.Now:HH:mm:ss}";
+        lock (_queueLock) { _sensorQueue.Enqueue(data); }
 
-            string logData = $"$LOG,{DateTime.Now:yyyy-MM-dd},{(rand.NextDouble() * 10 + 20).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},{rand.Next(10, 50)}#";
-            lock (_queueLock) { _sensorQueue.Enqueue(logData); }                                     // ep từ 2,8 de no khong hien thi thanh 2,6 ma hien thi thanh 2.6
+        string logData = $"$LOG,{DateTime.Now:yyyy-MM-dd},{(rand.NextDouble() * 10 + 20).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},{rand.Next(10, 50)}#";
+        lock (_queueLock) { _sensorQueue.Enqueue(logData); }  
 
-            string randomId = ids[rand.Next(ids.Length)];
-            string status = rand.Next(0, 2) == 0 ? "ON" : "OFF";
-            lock (_queueLock) { _sensorQueue.Enqueue($"DEV:{randomId}:{status}"); }
-        }
-    }    
+        string randomId = ids[rand.Next(ids.Length)];
+        string status = rand.Next(0, 2) == 0 ? "ON" : "OFF";
+        lock (_queueLock) { _sensorQueue.Enqueue($"DEV:{randomId}:{status}"); }    
+    }
+}
 
 }

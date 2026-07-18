@@ -5,6 +5,7 @@ using System.Linq;// thuc hien cac phep
 using System.Threading.Tasks;
 using System.Globalization;// xu ly dau cham trong day 
 
+//khai bao 
 public static class Logger
 {
     private static readonly string FilePath = "history.csv";
@@ -16,15 +17,15 @@ public static class Logger
         {
             try
             {
-                //hàm ktra xem da ton tai chua de ghi de header
                 bool fileExists = File.Exists(FilePath);
-                // them append: true vao cuoi file 
-                using(StreamWriter writer = new StreamWriter(FilePath, append: true))
+
+                using (StreamWriter writer = new StreamWriter(FilePath, append: true))
                 {
-                    if(!fileExists)
+                    if (!fileExists)
                     {
                         writer.WriteLine("Thoi gian, Nhiet do, Muc Nuoc");
                     }
+
                     string logLine = string.Format(
                         CultureInfo.InvariantCulture,
                         "{0:yyyy-MM-dd HH:mm:ss},{1:F1},{2:F1}",
