@@ -1,0 +1,14 @@
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.AssemblyInfoInputs.cache
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.AssemblyInfo.cs
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.csproj.CoreCompileInputs.cache
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\bin\Debug\net10.0\NEWPROJECT.exe
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\bin\Debug\net10.0\NEWPROJECT.deps.json
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\bin\Debug\net10.0\NEWPROJECT.runtimeconfig.json
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\bin\Debug\net10.0\NEWPROJECT.dll
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\bin\Debug\net10.0\NEWPROJECT.pdb
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.dll
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\refint\NEWPROJECT.dll
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.pdb
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\NEWPROJECT.genruntimeconfig.cache
+C:\Users\surface laptop\Documents\bài code tháng 7 8\NEWPROJECT\obj\Debug\net10.0\ref\NEWPROJECT.dll
