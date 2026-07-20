@@ -4,15 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Globalization;
-class program
+class Program
 //dotnet run --project NEWPROJECT
 {
     private static Queue<string> DATAqueue = new Queue<string>();
     private static readonly object DATAlock = new object();
-    private static Dictionary<string, ThietBiDo> dictDATABASE = new Dictionary<string, thietbido>();
+    private static Dictionary<string, thietbido> dictDATABASE = new Dictionary<string, thietbido>();
     private static readonly object dictDATA = new object();
+    private static BinhNuoc? BinhNuoc01;
 
-    static void Main(string[] args)
+   static async Task Main(string[] args)
     {
         Console.WriteLine("======KHỞI TẠO BÌNH NƯỚC======");
 
@@ -76,15 +77,15 @@ class program
 
         Console.WriteLine("===============KIỂM TRA THIẾT BỊ===============");
         List<thietbido> danhsachthietbi = new List<thietbido>();
-        danhsachthietbi.Add(new Cambiennhietdo {mathietbicambien = "TEMP--001"});
-        danhsachthietbi.Add(new Cameratruoc {mathietbicamera = "CAMERA--001"});
+        danhsachthietbi.Add(new Cambietnhietdo {mathietbicambien = "TEMP--001"});
+        danhsachthietbi.Add(new CameraTruoc {mathietbicamera = "CAMERA--001"});
         if (danhsachthietbi != null && danhsachthietbi.Count > 0)
         {
             foreach(var thietbi in danhsachthietbi)
             {
                 Console.WriteLine("===============KHỚI TẠO THIẾT BỊ===============");
-                thietbi.mathietbido;
-                thietbi.trangthaicuathietbi;
+                thietbi.mathietbido();
+                thietbi.trangthaicuathietbi();
                 if(thietbi is IConnectable thietbiketnoi)
                 {
                     thietbiketnoi.ConnectSerial();
@@ -94,9 +95,13 @@ class program
         Console.ForegroundColor = ConsoleColor.Yellow;
         // thay chay gia lap o day de ctrinh chay muot ma hon
         Console.WriteLine("\n======================================================");
-        Console.WriteLine("      CHẠY THỬ GIẢ LẬP        ");
+        Console.WriteLine("      CHẠY SENSOR GIẢ LẬP        ");
         Console.WriteLine("\n======================================================");
         Console.ResetColor();
+        Task taskSimulator = SensorSimulator();
+        Task taskProcessor = BackgroundProcessor();
+       Task.WaitAll(taskSimulator, taskProcessor);
+        }
 
         public static bool ArduinoData(string rawData, out DateTime date, out double temp, out double waterlevel)
             {
@@ -181,8 +186,8 @@ class program
                                                 {
                                                     if (dictDATABASE.TryGetValue(id, out thietbido thietbi))
                                                         {
-                                                            thietBi.trangthai = newStatus;
-                                                            Console.WriteLine($"[Update] {thietbi.tenthietbido} ({id}) chuyen sang : {thietBi.trangthai}");
+                                                            thietbi.trangthai = newStatus;
+                                                            Console.WriteLine($"[Update] {thietbi.tenthietbido} ({id}) chuyen sang : {thietbi.trangthai}");
                                                         }
                                                     else
                                                         {
@@ -203,7 +208,7 @@ class program
             
         }
 
-
+     }
         static async Task SensorSimulator()
         {
             string[] ids = { "CAM--001", "TEMP--001" };
@@ -216,7 +221,10 @@ class program
                 string data = $"AUTO_SENSOR | Temp: {rand.Next(20, 35)}°C | Time: {DateTime.Now:HH:mm:ss}";
                 lock (DATAlock) { DATAqueue.Enqueue(data); }
 
-                string logData = $"$LOG,{DateTime.Now:yyyy-MM-dd},{(rand.NextDouble() * 10 + 20).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)},{BinhNuoc01._mucnuochientai}#";
+                string randomTemp = (rand.NextDouble() * 10 + 20).ToString("F1", CultureInfo.InvariantCulture);
+                double currentWater = BinhNuoc01 != null ? BinhNuoc01._mucnuochientai : 0;
+            
+                string logData = $"$LOG,{DateTime.Now:yyyy-MM-dd},{randomTemp},{currentWater}#";
                 lock (DATAlock) { DATAqueue.Enqueue(logData); }  
 
                 string randomId = ids[rand.Next(ids.Length)];
@@ -225,4 +233,3 @@ class program
             }
         }
     }
-}

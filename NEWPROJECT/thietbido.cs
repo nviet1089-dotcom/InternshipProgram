@@ -1,6 +1,11 @@
 using System;
+using System.IO;
+using System.Collections.Generic; 
+using System.Linq;
+using System.Threading.Tasks;
+using System.Globalization;
 
-class thietbido
+public class thietbido
 {
     public string tenthietbido {get; set; }
     public string trangthai {get; set; }
