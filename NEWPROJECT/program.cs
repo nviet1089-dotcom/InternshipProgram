@@ -9,7 +9,7 @@ class Program
 {
     private static Queue<string> DATAqueue = new Queue<string>();
     private static readonly object DATAlock = new object();
-    private static Dictionary<string, thietbido> dictDATABASE = new Dictionary<string, thietbido>();
+    private static Dictionary<string, thietbido?> dictDATABASE = new Dictionary<string, thietbido?>();
     private static readonly object dictDATA = new object();
     private static BinhNuoc? BinhNuoc01;
 
@@ -132,6 +132,12 @@ class Program
 
         static async Task BackgroundProcessor()
      {
+        //
+        int logCount = 0;
+        double totalTemp = 0.0;
+        double maxTemp = double.MinValue;
+        int maxTempIndex = 0 ;
+        //
         while (true)
         {
             await Task.Delay(10000);
@@ -160,9 +166,32 @@ class Program
                         {
                             if(ArduinoData(item, out DateTime date,out double temp ,out double waterlevel))
                                 {
+                                    //
+                                    logCount++;
+                                    totalTemp += temp;
+
+                                    if(temp > maxTemp)
+                                        {
+                                            maxTemp = temp;
+                                            maxTempIndex = logCount;
+                                        }
                                     Console.ForegroundColor = ConsoleColor.DarkGreen;
                                     Console.WriteLine($"log ngay:{date:yyyy-MM-dd} , nhiet do:{temp:F1} do , muc nuoc:{waterlevel}cm ");
                                     Console.ResetColor();
+                                    if(logCount % 10 == 0)
+                                        {
+                                            double avgTemp = totalTemp / 10;
+                                            Console.ForegroundColor = ConsoleColor.Magenta;
+                                            Console.WriteLine("\n======================================================");
+                                            Console.WriteLine($"Nhiệt độ trung bình : {avgTemp:F2} °C");
+                                            Console.WriteLine($"Nhiệt độ cao nhất   : {maxTemp:F1} °C (ở LẦN THỨ {maxTempIndex})");
+                                            Console.WriteLine("======================================================\n");
+                                            totalTemp = 0.0;
+                                            maxTemp = double.MinValue;
+                                            maxTempIndex = 0;
+                                            //
+                            
+                                        }
                                 }
                                 else
                                 {
@@ -184,7 +213,7 @@ class Program
 
                                             lock (dictDATA)
                                                 {
-                                                    if (dictDATABASE.TryGetValue(id, out thietbido thietbi))
+                                                    if (dictDATABASE.TryGetValue(id, out thietbido? thietbi) && thietbi != null)
                                                         {
                                                             thietbi.trangthai = newStatus;
                                                             Console.WriteLine($"[Update] {thietbi.tenthietbido} ({id}) chuyen sang : {thietbi.trangthai}");

@@ -17,4 +17,8 @@ public class CameraTruoc : thietbido
         base.trangthaicuathietbi();
         Console.WriteLine($"trạng thái hoạt động của thiết bị:");
     }
+    public void ConnectSerial()
+    {
+        Console.WriteLine($"Camera: Đang mo luong video tu cong serial...");
+    }
 }

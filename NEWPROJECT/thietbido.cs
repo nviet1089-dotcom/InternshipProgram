@@ -1,3 +1,4 @@
+#pragma warning disable IDE1006 
 using System;
 using System.IO;
 using System.Collections.Generic; 
@@ -7,8 +8,8 @@ using System.Globalization;
 
 public class thietbido
 {
-    public string tenthietbido {get; set; }
-    public string trangthai {get; set; }
+    public string tenthietbido {get; set; } = string.Empty;
+    public string trangthai {get; set; } = string.Empty;
     public virtual void mathietbido()
     {
         Console.WriteLine("mã của thiết bị:");

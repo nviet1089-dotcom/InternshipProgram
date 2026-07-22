@@ -18,6 +18,9 @@ public class Cambietnhietdo : thietbido
         base.trangthaicuathietbi();
         Console.WriteLine($"trạng thái hoạt động của thiết bị:");
     }
-
+    public void ConnectSerial()
+    {
+        Console.WriteLine("đang mở cổng com 9.");
+    }
 
 }
