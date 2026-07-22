@@ -1,0 +1,222 @@
+﻿[2026-07-23 01:02:41] ======KHỞI TẠO BÌNH NƯỚC======
+[2026-07-23 01:02:51] Cảnh báo bình đã đầy nước có thể tràn ra bên ngoài.!
+[2026-07-23 01:02:51] vui lòng đợi giây lát
+[2026-07-23 01:02:51] dung tích tối đa của bình nước là: 4.lit
+[2026-07-23 01:02:51] mực nước hiện tại trong bình nước là: 0.lit
+[2026-07-23 01:02:51] ===============KIỂM TRA THIẾT BỊ===============
+[2026-07-23 01:02:51] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:02:51] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:02:51] 
+======================================================
+[2026-07-23 01:02:51]       CHẠY SENSOR GIẢ LẬP        
+[2026-07-23 01:02:51] 
+======================================================
+[2026-07-23 01:03:11] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:03:11] log ngay:2026-07-23 , nhiet do:23,9 do , muc nuoc:0cm 
+[2026-07-23 01:03:11] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:03:21] 
+[Background] xử lý 6 gói tin từ queue:
+[2026-07-23 01:03:21] log ngay:2026-07-23 , nhiet do:26,4 do , muc nuoc:0cm 
+[2026-07-23 01:03:21] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:03:21] log ngay:2026-07-23 , nhiet do:23,8 do , muc nuoc:0cm 
+[2026-07-23 01:03:21] [Update]  (TEMP--001) chuyen sang : OFF
+[2026-07-23 01:03:31] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:03:31] log ngay:2026-07-23 , nhiet do:23,0 do , muc nuoc:0cm 
+[2026-07-23 01:03:31] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:03:41] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:03:41] log ngay:2026-07-23 , nhiet do:25,2 do , muc nuoc:0cm 
+[2026-07-23 01:03:41] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:12:54] ======KHỞI TẠO BÌNH NƯỚC======
+[2026-07-23 01:13:01] Cảnh báo bình đã đầy nước có thể tràn ra bên ngoài.!
+[2026-07-23 01:13:02] vui lòng đợi giây lát
+[2026-07-23 01:13:02] dung tích tối đa của bình nước là: 4.lit
+[2026-07-23 01:13:02] mực nước hiện tại trong bình nước là: 0.lit
+[2026-07-23 01:13:02] ===============KIỂM TRA THIẾT BỊ===============
+[2026-07-23 01:13:02] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:13:02] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:13:02] 
+======================================================
+[2026-07-23 01:13:02]       CHẠY SENSOR GIẢ LẬP        
+[2026-07-23 01:13:02] 
+======================================================
+[2026-07-23 01:13:12] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:13:12] log ngay:2026-07-23 , nhiet do:27,5 do , muc nuoc:0cm 
+[2026-07-23 01:13:12] [Update]  (TEMP--001) chuyen sang : OFF
+[2026-07-23 01:13:22] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:13:22] log ngay:2026-07-23 , nhiet do:27,8 do , muc nuoc:0cm 
+[2026-07-23 01:13:22] [Update]  (TEMP--001) chuyen sang : OFF
+[2026-07-23 01:13:32] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:13:32] log ngay:2026-07-23 , nhiet do:24,0 do , muc nuoc:0cm 
+[2026-07-23 01:13:32] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:13:42] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:13:42] log ngay:2026-07-23 , nhiet do:29,8 do , muc nuoc:0cm 
+[2026-07-23 01:13:42] [Update]  (TEMP--001) chuyen sang : OFF
+[2026-07-23 01:13:52] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:13:52] log ngay:2026-07-23 , nhiet do:29,3 do , muc nuoc:0cm 
+[2026-07-23 01:13:52] [Update]  (TEMP--001) chuyen sang : OFF
+[2026-07-23 01:14:02] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:14:02] log ngay:2026-07-23 , nhiet do:28,6 do , muc nuoc:0cm 
+[2026-07-23 01:14:02] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:14:13] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:14:13] log ngay:2026-07-23 , nhiet do:29,0 do , muc nuoc:0cm 
+[2026-07-23 01:14:13] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:14:23] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:14:23] log ngay:2026-07-23 , nhiet do:22,9 do , muc nuoc:0cm 
+[2026-07-23 01:14:23] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:14:33] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:14:33] log ngay:2026-07-23 , nhiet do:27,6 do , muc nuoc:0cm 
+[2026-07-23 01:14:33] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:14:43] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:14:43] log ngay:2026-07-23 , nhiet do:24,5 do , muc nuoc:0cm 
+[2026-07-23 01:14:43] 
+======================================================
+[2026-07-23 01:14:43] Nhiệt độ trung bình : 27,10 °C
+[2026-07-23 01:14:43] Nhiệt độ cao nhất   : 29,8 °C (ở LẦN THỨ 4)
+[2026-07-23 01:14:43] ======================================================
+
+[2026-07-23 01:14:43] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:14:53] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:14:53] log ngay:2026-07-23 , nhiet do:29,4 do , muc nuoc:0cm 
+[2026-07-23 01:14:53] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:15:03] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:15:03] log ngay:2026-07-23 , nhiet do:29,9 do , muc nuoc:0cm 
+[2026-07-23 01:15:03] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:15:13] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:15:13] log ngay:2026-07-23 , nhiet do:27,0 do , muc nuoc:0cm 
+[2026-07-23 01:15:13] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:15:34] ======KHỞI TẠO BÌNH NƯỚC======
+[2026-07-23 01:15:42] Cảnh báo bình đã đầy nước có thể tràn ra bên ngoài.!
+[2026-07-23 01:15:47] Cảnh báo bình đã đầy nước có thể tràn ra bên ngoài.!
+[2026-07-23 01:15:49] vui lòng đợi xử lí thông tin.
+[2026-07-23 01:15:49] vui lòng đợi giây lát
+[2026-07-23 01:15:49] dung tích tối đa của bình nước là: 6.lit
+[2026-07-23 01:15:49] mực nước hiện tại trong bình nước là: 5.lit
+[2026-07-23 01:15:49] ===============KIỂM TRA THIẾT BỊ===============
+[2026-07-23 01:15:49] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:15:49] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:15:49] 
+======================================================
+[2026-07-23 01:15:49]       CHẠY SENSOR GIẢ LẬP        
+[2026-07-23 01:15:49] 
+======================================================
+[2026-07-23 01:16:09] 
+[Background] xử lý 4 gói tin từ queue:
+[2026-07-23 01:16:09] log ngay:2026-07-23 , nhiet do:20,2 do , muc nuoc:0cm 
+[2026-07-23 01:16:09] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:16:19] 
+[Background] xử lý 5 gói tin từ queue:
+[2026-07-23 01:16:19] log ngay:2026-07-23 , nhiet do:27,1 do , muc nuoc:0cm 
+[2026-07-23 01:16:19] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:16:19] log ngay:2026-07-23 , nhiet do:25,2 do , muc nuoc:0cm 
+[2026-07-23 01:16:19] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:16:29] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:16:29] log ngay:2026-07-23 , nhiet do:28,6 do , muc nuoc:0cm 
+[2026-07-23 01:16:29] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:16:39] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:16:39] log ngay:2026-07-23 , nhiet do:23,7 do , muc nuoc:0cm 
+[2026-07-23 01:16:39] [Update]  (TEMP--001) chuyen sang : OFF
+[2026-07-23 01:16:49] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:16:49] log ngay:2026-07-23 , nhiet do:24,3 do , muc nuoc:0cm 
+[2026-07-23 01:16:49] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:22:41] ======KHỞI TẠO BÌNH NƯỚC======
+[2026-07-23 01:22:49] vui lòng đợi xử lí thông tin.
+[2026-07-23 01:22:49] vui lòng đợi giây lát
+[2026-07-23 01:22:49] dung tích tối đa của bình nước là: 6.lit
+[2026-07-23 01:22:49] mực nước hiện tại trong bình nước là: 3.lit
+[2026-07-23 01:22:49] ===============KIỂM TRA THIẾT BỊ===============
+[2026-07-23 01:22:49] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:22:49] ===============KHỚI TẠO THIẾT BỊ===============
+[2026-07-23 01:22:49] 
+======================================================
+[2026-07-23 01:22:49]       CHẠY SENSOR GIẢ LẬP        
+[2026-07-23 01:22:49] 
+======================================================
+[2026-07-23 01:22:55] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:22:55] log ngay:2026-07-23 , nhiet do:20,1 do , muc nuoc:0cm 
+[2026-07-23 01:22:55] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:22:58] 
+[Background] xử lý 6 gói tin từ queue:
+[2026-07-23 01:22:58] log ngay:2026-07-23 , nhiet do:24,3 do , muc nuoc:0cm 
+[2026-07-23 01:22:58] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:22:58] log ngay:2026-07-23 , nhiet do:25,7 do , muc nuoc:0cm 
+[2026-07-23 01:22:59] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:23:02] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:23:02] log ngay:2026-07-23 , nhiet do:23,7 do , muc nuoc:0cm 
+[2026-07-23 01:23:02] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:23:05] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:23:05] log ngay:2026-07-23 , nhiet do:23,8 do , muc nuoc:0cm 
+[2026-07-23 01:23:05] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:23:08] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:23:08] log ngay:2026-07-23 , nhiet do:25,8 do , muc nuoc:0cm 
+[2026-07-23 01:23:08] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:23:11] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:23:11] log ngay:2026-07-23 , nhiet do:23,3 do , muc nuoc:0cm 
+[2026-07-23 01:23:11] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:27:42] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:27:42] log ngay:2026-07-23 , nhiet do:22,9 do , muc nuoc:0cm 
+[2026-07-23 01:27:42] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:27:45] 
+[Background] xử lý 6 gói tin từ queue:
+[2026-07-23 01:27:45] log ngay:2026-07-23 , nhiet do:26,5 do , muc nuoc:0cm 
+[2026-07-23 01:27:45] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:27:45] log ngay:2026-07-23 , nhiet do:21,9 do , muc nuoc:0cm 
+[2026-07-23 01:27:45] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:27:48] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:27:48] log ngay:2026-07-23 , nhiet do:22,7 do , muc nuoc:0cm 
+[2026-07-23 01:27:48] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:27:51] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:27:51] log ngay:2026-07-23 , nhiet do:28,3 do , muc nuoc:0cm 
+[2026-07-23 01:27:51] [Update]  (CAM--001) chuyen sang : OFF
+[2026-07-23 01:27:54] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:27:54] log ngay:2026-07-23 , nhiet do:20,5 do , muc nuoc:0cm 
+[2026-07-23 01:27:54] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:27:57] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:27:57] log ngay:2026-07-23 , nhiet do:23,3 do , muc nuoc:0cm 
+[2026-07-23 01:27:57] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:28:00] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:28:00] log ngay:2026-07-23 , nhiet do:28,2 do , muc nuoc:0cm 
+[2026-07-23 01:28:00] [Update]  (CAM--001) chuyen sang : ON
+[2026-07-23 01:28:03] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:28:03] log ngay:2026-07-23 , nhiet do:25,4 do , muc nuoc:0cm 
+[2026-07-23 01:28:03] [Update]  (TEMP--001) chuyen sang : ON
+[2026-07-23 01:28:06] 
+[Background] xử lý 3 gói tin từ queue:
+[2026-07-23 01:28:06] log ngay:2026-07-23 , nhiet do:22,2 do , muc nuoc:0cm 
+[2026-07-23 01:28:06] 
+======================================================
+[2026-07-23 01:28:06] Nhiệt độ trung bình : 24,19 °C
+[2026-07-23 01:28:06] Nhiệt độ cao nhất   : 28,3 °C (ở LẦN THỨ 5)
+[2026-07-23 01:28:06] ======================================================
+
+[2026-07-23 01:28:06] [Update]  (CAM--001) chuyen sang : ON

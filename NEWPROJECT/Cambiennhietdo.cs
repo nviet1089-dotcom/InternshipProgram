@@ -1,0 +1,26 @@
+using System;
+using System.IO;
+using System.Collections.Generic; 
+using System.Linq;
+using System.Threading.Tasks;
+using System.Globalization;
+
+public class Cambietnhietdo : thietbido
+{
+    public string mathietbicambien {get; set; } = string.Empty;
+    public override void mathietbido()
+    {
+        base.mathietbido();
+        Console.WriteLine($"mã của thiết bị cảm biến :TEMP--001");
+    }
+    public override void trangthaicuathietbi()
+    {
+        base.trangthaicuathietbi();
+        Console.WriteLine($"trạng thái hoạt động của thiết bị:TRUE");
+    }
+    public void ConnectSerial()
+    {
+        Console.WriteLine("đang mở cổng com 9.");
+    }
+
+}
