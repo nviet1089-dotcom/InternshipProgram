@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\NEWPROJECT\\NEWPROJECT.csproj",
+      "projectUniqueName": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\NEWPROJECT\\NEWPROJECT.csproj",
       "projectName": "NEWPROJECT",
-      "projectPath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\NEWPROJECT\\NEWPROJECT.csproj",
+      "projectPath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\NEWPROJECT\\NEWPROJECT.csproj",
       "packagesPath": "C:\\Users\\surface laptop\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\NEWPROJECT\\obj\\",
+      "outputPath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\NEWPROJECT\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\surface laptop\\AppData\\Roaming\\NuGet\\NuGet.Config"

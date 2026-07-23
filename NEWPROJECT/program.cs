@@ -42,7 +42,7 @@ class Program
             }
              Console.WriteLine("thông số sai, vui lòng nhập lại:");
         }
-        BinhNuoc BinhNuoc01 = new BinhNuoc(succhua, chieucao);
+        BinhNuoc01 = new BinhNuoc(succhua, chieucao);
         while(true)
         {
             Console.WriteLine($"nhập mức nước đã đổ vào (0 - {BinhNuoc01._dungtichtoida}):");
@@ -109,35 +109,35 @@ class Program
         Task taskSimulator = SensorSimulator();
         Task taskProcessor = BackgroundProcessor();
         Task.WaitAll(taskSimulator, taskProcessor);
-        }
+    }
 
         public static bool ArduinoData(string rawData, out DateTime date, out double temp, out double waterlevel)
+        {
+            date = DateTime.MinValue;
+            temp = 0.0;
+            waterlevel = 0.0;
+
+            if (string.IsNullOrWhiteSpace(rawData) || !rawData.StartsWith("$LOG,") || !rawData.EndsWith("#"))
             {
-                date = DateTime.MinValue;
-                temp = 0.0;
-                waterlevel = 0.0;
-                if (string.IsNullOrWhiteSpace(rawData) || !rawData.StartsWith("$LOG,") || !rawData.EndsWith("#"))
-                    {
-                        return false;
-                    }
-
-                try
-                    {
-                        string cleanData = rawData.TrimStart('$').TrimEnd('#');
-                        string[] parts = cleanData.Split(',');
-
-                        if (parts.Length != 4 || parts[0] != "LOG") {return false;}
-                        if (!DateTime.TryParse(parts[1], CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) {return false;}
-                        if (!double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out temp)) {return false;}
-                        if (!double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out waterlevel)) {return false;}
-                        return true; 
-                    }
-                catch
-                    {
-                        return false; 
-                    }
+                return false;
             }
 
+            try
+            {
+                string cleanData = rawData.TrimStart('$').TrimEnd('#');
+                string[] parts = cleanData.Split(',');
+
+                if (parts.Length != 4 || parts[0] != "LOG") {return false;}
+                if (!DateTime.TryParse(parts[1],CultureInfo.InvariantCulture, DateTimeStyles.None, out date)) {return false;}
+                if (!double.TryParse(parts[2],NumberStyles.Any, CultureInfo.InvariantCulture, out temp)) {return false;}
+                if (!double.TryParse(parts[3],NumberStyles.Any, CultureInfo.InvariantCulture, out waterlevel)) {return false;}
+                return true;
+            }    
+            catch
+            {
+                return false; 
+            }
+        }   
         static async Task BackgroundProcessor()
      {
         //
@@ -186,13 +186,16 @@ class Program
                                     Console.ForegroundColor = ConsoleColor.DarkGreen;
                                     Console.WriteLine($"log ngay:{date:yyyy-MM-dd} , nhiet do:{temp:F1} do , muc nuoc:{waterlevel}cm ");
                                     Console.ResetColor();
+
+                                    CSVhisstory.Write(date, temp, waterlevel);
+
                                     if(logCount % 10 == 0)
                                         {
                                             double avgTemp = totalTemp / 10;
                                             Console.ForegroundColor = ConsoleColor.Magenta;
                                             Console.WriteLine("\n======================================================");
-                                            loggerr.Log($"Nhiệt độ trung bình : {avgTemp:F2} °C");
-                                            loggerr.Log($"Nhiệt độ cao nhất   : {maxTemp:F1} °C (ở LẦN THỨ {maxTempIndex})");
+                                            Console.WriteLine($"Nhiệt độ trung bình : {avgTemp:F2} °C");
+                                            Console.WriteLine($"Nhiệt độ cao nhất   : {maxTemp:F1} °C (tại lần đo thứ {maxTempIndex})");
                                             Console.WriteLine("======================================================\n");
                                             totalTemp = 0.0;
                                             maxTemp = double.MinValue;
