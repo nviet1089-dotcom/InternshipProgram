@@ -145,13 +145,40 @@ Sử dụng cú pháp using (hoặc các phương thức tĩnh an toàn như Fil
 Sử dụng biến môi trường hoặc đường dẫn kết hợp AppDomain.CurrentDomain.BaseDirectory để định vị chính xác thư mục lưu trữ file history.csv, giúp dễ dàng kiểm tra dữ liệu sau khi chạy chương trình.
   /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
   Ngày 18 - 19 - 20
-Nội dung công việc:
-Nội dung làm lại:
-Những khó khăn trong công việc:
-Hướng giải quyết:
+- Hôm nay làm được gì?
+ Tái cấu trúc luồng chạy chính: Chuyển đổi toàn bộ chương trình từ nhập liệu tuần tự sang mô hình bất đồng bộ (async Task Main), tích hợp chạy song song luồng xử lý nền (BackgroundProcessor) và luồng giả lập cảm biến (SensorSimulator) thông qua Task.WaitAll.
+ Nâng cấp tính năng quản lý thiết bị & bình chứa: Nâng cấp lớp BinhNuoc01 cho phép người dùng nhập chi tiết dung tích, chiều cao linh hoạt từ bàn phím; đồng thời liên kết trực tiếp giá trị mực nước thực tế vào chuỗi dữ liệu giả lập. Nâng cấp cấu trúc lưu trữ danh sách thiết bị sang Dictionary<string, thietbido?> để truy xuất nhanh $O(1)$.
+ Bổ sung tính năng xử lý dữ liệu: Rút ngắn thời gian giả lập gửi log từ 10 giây xuống 3 giây/lần giúp phản hồi tiệm cận thời gian thực; bổ sung cơ chế tự động tính nhiệt độ trung bình và tìm nhiệt độ cực đại kèm vị trí chu kỳ đo sau mỗi 10 gói tin $LOG.
+ Ghi vết dữ liệu: Kết nối lưu lịch sử đo vào file CSV thông qua lớp CSVhisstory.
+- Vướng mắc / Bug gặp phải là gì?
+Xung đột đa luồng (Race Condition): Luồng BackgroundProcessor và SensorSimulator cùng truy cập/chỉnh sửa DATAqueue và dictDATABASE gây nguy cơ bất đồng bộ và tranh chấp dữ liệu.
+Xử lý Null Safety: Xuất hiện cảnh báo kiểu dữ liệu có thể chứa null (thietbido?) khi truy xuất thiết bị trong dictDATABASE.
+Trôi biến thống kê: Biến cộng dồn nhiệt độ (totalTemp), vị trí đo (maxTempIndex) và chỉ số cực đại (maxTemp) dễ bị sai lệch nếu không reset đúng chu kỳ sau khi đủ 10 gói tin.
+- Đã giải quyết thế nào / Cần Mentor hỗ trợ gì?
+Cách giải quyết:Áp dụng khóa an toàn lock (DATAlock) cho thao tác Enqueue/Dequeue trên Queue và lock (dictDATA) cho Dictionary để đảm bảo an toàn đa luồng.Khắc phục cảnh báo Null bằng cách kết hợp TryGetValue với điều kiện kiểm tra tồn tại != null.
+Đặt lại logic reset toàn bộ biến thống kê (totalTemp = 0.0, maxTemp = double.MinValue, maxTempIndex = 0) ngay trong khối lệnh xử lý chu kỳ 10 gói tin (logCount % 10 == 0).
+Đề xuất / Cần Mentor hỗ trợ:Cần Mentor review giúp đoạn mã xử lý an toàn đa luồng xem cơ chế lock hiện tại đã tối ưu chưa hay nên chuyển sang dùng ConcurrentQueue và ConcurrentDictionary của .NET để đạt hiệu năng cao hơn.
+- Ghi chú kỹ thuật về Lập trình Bất đồng bộ (Async):Lập trình bất đồng bộ (async/await) là cơ chế cho phép chương trình thực thi các tác vụ tốn thời gian (như đọc/ghi file, nhận dữ liệu mạng hay chạy bộ giả lập) mà không làm đóng băng (block) luồng chính của ứng dụng. Chức năng hoạt động cốt lõi của nó là tạm giải phóng luồng hiện tại để xử lý công việc khác trong lúc chờ một tác vụ nền hoàn thành, sau đó tự động quay lại tiếp tục đoạn mã ngay tại điểm dừng. Trong ứng dụng này, async được áp dụng để duy trì đồng thời hai tiến trình riêng biệt: vừa giả lập phát dữ liệu cảm biến liên tục, vừa xử lý và lưu trữ dữ liệu nền một cách song song, giúp tối ưu tối đa hiệu năng hệ thống.
  /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
  ngày 21 - 22 
- 
+- Day 15: Cấu hình phần cứng & Giao tiếp Serial (Arduino)
+Cài đặt và cấu hình hoàn thiện môi trường phát triển Arduino IDE.
+Viết chương trình nạp cho vi điều khiển để đọc dữ liệu đo thực tế từ cảm biến nhiệt độ phòng.
+Thiết kế và đóng gói dữ liệu theo chuỗi định dạng truyền thông chuẩn (ví dụ: $TEMP,28.5#) để truyền phát dữ liệu ổn định qua cổng Serial (USB) với baudrate chuẩn (9600 bps).
+- Day 16: Thiết kế giao diện người dùng (C# Desktop App)
+Khởi tạo dự án ứng dụng giao diện C# (WPF / WinForms).
+Thiết kế khung điều khiển kết nối: Bổ sung ComboBox cho phép quét/chọn cổng COM Port, tùy chỉnh Baudrate và các nút bấm Connect / Disconnect.
+Xây dựng giao diện hiển thị: Tạo các ô Dashboard/Text Block để cập nhật trực quan các thông số nhiệt độ thực tế và trạng thái kết nối phần cứng theo thời gian thực.- Vướng mắc / Bug gặp phải là gì?
+Lỗi trôi/ngắt chuỗi Serial (Day 15): Khi truyền dữ liệu tốc độ cao qua cổng USB, gói tin thỉnh thoảng bị chia nhỏ làm C# đọc thiếu ký tự đầu/cuối.
+Xung đột luồng UI trong C# (Day 16): Sự kiện nhận dữ liệu SerialPort.DataReceived chạy ở luồng nền (Background Thread), khi cập nhật trực tiếp lên các ô hiển thị UI sẽ gây ra lỗi Cross-thread operation not valid.
+Tự động nhận diện cổng COM (Day 16): Cổng COM chưa tự động cập nhật lại danh sách khi cắm hoặc rút cáp USB đột ngột.
+- Đã giải quyết thế nào / Cần Mentor hỗ trợ gì?
+Cách giải quyết:
+Xử lý chuỗi Serial: Thêm ký tự bắt đầu $ và kết thúc # (hoặc \n) trong code Arduino, kết hợp sử dụng Serial.ReadLine() ở phía C# để đảm bảo nhận trọn vẹn một khung dữ liệu.
+Cập nhật UI an toàn: Sử dụng Dispatcher.Invoke (đối với WPF) hoặc Control.Invoke (đối với WinForms) để đưa thao tác cập nhật giao diện về đúng luồng UI chính (UI Thread).
+Quản lý Cổng COM: Viết hàm quét danh sách cổng SerialPort.GetPortNames() và đổ vào ComboBox mỗi khi bấm làm mới hoặc mở ứng dụng.
+/~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
+ngày 23
 
 
 
