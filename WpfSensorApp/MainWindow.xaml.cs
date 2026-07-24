@@ -104,9 +104,11 @@ namespace WpfSensorApp
         {
             try
             {
-                string line = _serialPort.ReadLine();
-                ParseAndDisplayData(line);
-                
+                string line = _serialPort.ReadLine().Trim();
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    ParseAndDisplayData(line);
+                }));
             }
             catch (Exception ex)
             {
@@ -118,6 +120,11 @@ namespace WpfSensorApp
         {
             if (data.Contains("T:") && data.Contains("H:") && data.Contains("|"))
             {
+                //
+                if(data.StartsWith("$") && data.EndsWith("#"))
+                {
+                    data = data.Substring(1, data.Length - 2);
+                }
                 string[] parts = data.Split('|');
                 if (parts.Length == 2)
                 {

@@ -47,8 +47,8 @@ Tài liệu này chứa toàn bộ lộ trình học tập lý thuyết, bài t�
 | **Day 15** | Cài đặt Arduino IDE. Lập trình đọc dữ liệu từ Cảm biến nhiệt độ phòng. Định dạng chuỗi truyền thông chuẩn gửi qua cổng Serial (USB). | ✅ `Done` | [Link]() |
 | **Day 16** | Tạo project **C# WPF App** (hoặc WinForms). Thiết kế UI: Khung kết nối COM Port, Nút bấm Connect/Disconnect, các ô hiển thị số liệu. | 🔄 `In Progress` | [Link]() |
 | **Day 17** | Sử dụng thư viện `System.IO.Ports.SerialPort` trong C# để thiết lập kết nối, bắt sự kiện nhận dữ liệu tự động `DataReceived`. | 🔄 `In Progress`| [Link]() |
-| **Day 18** | Viết hàm giải mã (Parse) chuỗi dữ liệu nhận được từ Arduino thời gian thực trên C# App. | ⬜ ToDo | [Link]() |
-| **Day 19** | Áp dụng cơ chế bất đồng bộ (`Dispatcher.Invoke` trong WPF) để đẩy dữ liệu cảm biến lên UI một cách an toàn mà không gây đơ (freeze) giao diện. | ⬜ ToDo | [Link]() |
+| **Day 18** | Viết hàm giải mã (Parse) chuỗi dữ liệu nhận được từ Arduino thời gian thực trên C# App. | 🔄 `In Progress | [Link]() |
+| **Day 19** | Áp dụng cơ chế bất đồng bộ (`Dispatcher.Invoke` trong WPF) để đẩy dữ liệu cảm biến lên UI một cách an toàn mà không gây đơ (freeze) giao diện. | 🔄 `In Progress | [Link]() |
 
 ### 📸 Tuần 4 (Cuối) & Tuần 5: Tích hợp Webcam & Xử lý ảnh Vision Tìm Mực Nước (EmguCV)
 

@@ -179,7 +179,30 @@ Xử lý chuỗi Serial: Thêm ký tự bắt đầu $ và kết thúc # (hoặc
 Cập nhật UI an toàn: Sử dụng Dispatcher.Invoke (đối với WPF) hoặc Control.Invoke (đối với WinForms) để đưa thao tác cập nhật giao diện về đúng luồng UI chính (UI Thread).
 Quản lý Cổng COM: Viết hàm quét danh sách cổng SerialPort.GetPortNames() và đổ vào ComboBox mỗi khi bấm làm mới hoặc mở ứng dụng.
 /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
-ngày 23
-
-
-
+ngày 23 - 24 
+Day 17 
+- Lý thuyết 
+Giao tiếp Serial (qua cổng USB/COM) giữa C# và phần cứng (Arduino) là quá trình truyền dữ liệu nối tiếp theo chuỗi byte. Để C# nhận biết có dữ liệu gửi tới, hệ thống có thể hoạt động theo cơ chế thăm dò hoặc kích hoạt ngắt theo giai đoạn.
+- lỗi gặp phải
+Lỗi treo/khóa cổng COM khi tắt App đột ngột: Nếu ứng dụng bị đóng khi chưa giải phóng cổng SerialPort, hệ điều hành Windows sẽ giữ khóa (Lock) cổng COM đó. Ở lần chạy ứng dụng tiếp theo, Lỗi: UnauthorizedAccessException: Access to the port is denied (Không thể mở cổng COM ở lần chạy sau).
+- fix lỗi 
+để tránh tình trạng chương trình bị lỗi này ta có thể sử dụng 2 phương án. phương án 1 Polling ta đặt định kì read() kiểm tra liên tục nhưng như vậy sẽ phải chạy ngầm liên tục. phương án 2 Event-driven là tự phát ngắt ở Luồng nền (Background Thread) khi có dữ liệu có thể cho chương trình ngủ khi không sử dụng đến và phản hồi ngay lập tức khi byte đến bộ đệm 
+DAY 18: Giải mã dữ liệu thời gian thực (Data Parser)
+- Lý thuyết 
+Dữ liệu gửi từ Arduino qua cổng Serial được lưu vào bộ đệm (Buffer). Quá trình bóc tách chuỗi (Parsing) cần chuyển đổi chuỗi thô (Raw String) sang dạng số thực (double) để tính toán và hiển thị.
+- Các lỗi găph phải
+Lỗi trôi/đứt đoạn chuỗi (Fragmented Data): Do tốc độ truyền Serial và cơ chế ngắt bộ đệm, sự kiện DataReceived có thể kích hoạt khi gói tin chưa truyền xong hoàn chỉnh (lỗi thưucj tế gửi $TEMP,28.5# nhưng lượt 1 chỉ nhận $TEMP,28. và lượt 2 nhận 5#). Nếu ép kiểu trực tiếp sẽ bị văng crash ứng dụng ngay lập tức.
+Sai lệch dấu phân cách thập phân: Một số hệ điều hành Windows (cài vùng Tiếng Việt/Tiếng Pháp) mặc định dùng dấu phẩy , làm dấu thập phân, khiến Convert.ToDouble("28.5") bị văng lỗi hoặc đọc sai thành 285.
+- các cách fix lỗi được cân nhắc 
+cách thứ 1 sử dụng 2 phương thức ReadExisting() + Convert.ToDouble() theo hướng dẫn để Đọc sạch mọi ký tự đang có trong Buffer và ép kiểu trực tiếp.
+nhưng có rất nhiều nhược điểm dễ bị crash app và gặp nhiều lỗi.
+cách thứuc thứu 2 sửa dụng ReadLine() + TryParse chia vấn đề gặp phải ra thành nhiều phần: thứ 1, Định dạng gói tin dùng khung đặc biệt: $ ... #, thứ 2 Dùng ReadLine() đọc theo dòng \n., thứ 3 Ép kiểu với double.TryParse & CultureInfo.InvariantCulture. chúng nhằm Lọc 100% rác đường truyền và gói tin dở dang. Chống Crash (Fault-tolerant): TryParse trả về false chứ không văng lỗi. Tương thích mọi máy tính: Chuẩn hóa dấu chấm . làm phân cách thập phân.
+Day 19 
+- Lý thuyết 
+Trong các ứng dụng C# Desktop (WPF/WinForms), chỉ có UI Thread (Luồng giao diện chính) mới có quyền truy cập và chỉnh sửa thuộc tính của các UI Control (như TextBlock, ProgressBar). Sự kiện DataReceived ở Day 17 thực thi hoàn toàn trên một Background Thread (Luồng nền).
+- lỗi khi chạy thử chương trình 
+Lỗi Cross-thread Exception: truy cập trực tiếp từ Background Thread lên giao diện , C# gửi về InvalidOperationException: The calling thread cannot access this object because a different thread owns it.
+lỗi khi chạy thử với phần cứng (Arduino/Cảm biến) gửi dữ liệu Serial về với tần suất quá cao khiến toàn bộ giao diện người dùng sẽ bị giật, đơ hoặc treo hoàn toàn
+- các sửa 
+sử dụng Dispatcher.Invoke Bắt Background Thread dừng lại, đợi UI Thread vẽ xong UI rồi mới chạy tiếp. có thể giúp chương trình không bị treo đơ nhưng sẽ khiến chương trình chạy không ổn định giật do bị nghẽn luồng 
+cách thức 2 Dispatcher.BeginInvoke đưa các dữ liệu mới cập nhật UI vào hàng đợi (Message Queue) của UI Thread rồi Background Thread tiếp tục đọc dữ liệu ngay lập tục giúp chương trình không bị đơ và giật tối ưu nhất.
