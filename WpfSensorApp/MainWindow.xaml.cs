@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO.Ports;
 using System.Windows;
+using System.Globalization;
 using System.Windows.Media;
 
 namespace WpfSensorApp
@@ -46,7 +47,7 @@ namespace WpfSensorApp
             LoadComPorts();
         }
 
-        // --- HÀM XỬ LÝ NÚT CONNECT (SỬA LỖI CS1061) ---
+        // xử lí connect
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
             if (cboComPorts.SelectedItem == null)
@@ -75,7 +76,7 @@ namespace WpfSensorApp
             }
         }
 
-        // --- HÀM XỬ LÝ NÚT DISCONNECT (SỬA LỖI CS1061) ---
+        // sửa lỗi disconnect
         private void btnDisconnect_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -103,16 +104,13 @@ namespace WpfSensorApp
         {
             try
             {
-                string line = _serialPort.ReadLine().Trim();
-
-                Dispatcher.Invoke(() =>
-                {
-                    ParseAndDisplayData(line);
-                });
+                string line = _serialPort.ReadLine();
+                ParseAndDisplayData(line);
+                
             }
-            catch
+            catch (Exception ex)
             {
-                // Bỏ qua lỗi nhận dữ liệu không đầy đủ
+                System.Diagnostics.Debug.WriteLine($"lỗi đọc serial:{ex.Message}");
             }
         }
 
@@ -128,6 +126,21 @@ namespace WpfSensorApp
 
                     txtTemperature.Text = $"{tempStr} °C";
                     txtHumidity.Text = $"{humStr} %";
+                    //day19
+
+                    if(double.TryParse(tempStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double tempValue))
+                    {
+                        if (tempValue > 35.0)
+                        {
+                            txtStatus.Text = $"CẢNH BÁO: Nhiệt độ vượt ngưỡng ({tempValue:F1} °C)!";
+                            txtStatus.Foreground = Brushes.Red;
+                        }
+                        else
+                        {
+                            txtStatus.Text = $"Trạng thái: Đã kết nối tới {_serialPort.PortName} | Hoạt động bình thường";
+                            txtStatus.Foreground = Brushes.Green;
+                        }
+                    }
                 }
             }
         }
@@ -137,6 +150,7 @@ namespace WpfSensorApp
             if (_serialPort != null && _serialPort.IsOpen)
             {
                 _serialPort.Close();
+                _serialPort.Dispose();
             }
             base.OnClosed(e);
         }
