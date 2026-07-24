@@ -146,6 +146,7 @@ Sử dụng biến môi trường hoặc đường dẫn kết hợp AppDomain.C
   /~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~/
   Ngày 18 - 19 - 20
 - Hôm nay làm được gì?
+tạo lại 1 project mới mang tên NEWPROJECT 
  Tái cấu trúc luồng chạy chính: Chuyển đổi toàn bộ chương trình từ nhập liệu tuần tự sang mô hình bất đồng bộ (async Task Main), tích hợp chạy song song luồng xử lý nền (BackgroundProcessor) và luồng giả lập cảm biến (SensorSimulator) thông qua Task.WaitAll.
  Nâng cấp tính năng quản lý thiết bị & bình chứa: Nâng cấp lớp BinhNuoc01 cho phép người dùng nhập chi tiết dung tích, chiều cao linh hoạt từ bàn phím; đồng thời liên kết trực tiếp giá trị mực nước thực tế vào chuỗi dữ liệu giả lập. Nâng cấp cấu trúc lưu trữ danh sách thiết bị sang Dictionary<string, thietbido?> để truy xuất nhanh $O(1)$.
  Bổ sung tính năng xử lý dữ liệu: Rút ngắn thời gian giả lập gửi log từ 10 giây xuống 3 giây/lần giúp phản hồi tiệm cận thời gian thực; bổ sung cơ chế tự động tính nhiệt độ trung bình và tìm nhiệt độ cực đại kèm vị trí chu kỳ đo sau mỗi 10 gói tin $LOG.
