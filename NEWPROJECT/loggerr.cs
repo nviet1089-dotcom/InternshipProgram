@@ -5,8 +5,27 @@ using System.Globalization;
 
 public static class Logger
 {
-    private static readonly string FilePath = "history.csv";
+    private static readonly string FilePath = Path.Combine( AppDomain.CurrentDomain.BaseDirectory,  "history.csv" );
     private static readonly object FileLock = new object();
+    static Logger()
+    {
+        InitCsvHeader();
+    }
+    private static void InitCsvHeader()
+    {
+        try
+        {
+            lock (FileLock)
+            {
+                if(!File.Exists(FilePath))
+                {
+                    string header = "thời gian ; nhiệt độ ; mưucj nước " + Environment.NewLine;
+                    File.WriteAllText(FilePath , header , Encoding.UTF8);
+                }
+            }
+        }
+        catch{ }
+    }
 
     public static void LogCSV(DateTime thoiGian, double nhietDo, double mucNuoc)
     {

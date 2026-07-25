@@ -7,8 +7,10 @@ using System.Threading.Tasks;
 using System.Globalization;
 public static class CSVhisstory
 {
+    private static readonly string CsvFilePath = Path.Combine(Directory.GetCurrentDirectory(), "history.csv");
+    //private static readonly string CsvFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "history.csv");
     private static readonly object _csvLock = new object();
-    private static readonly string CsvFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "history.csv");
+   
 
     static CSVhisstory()
     {
