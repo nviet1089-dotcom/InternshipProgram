@@ -45,17 +45,17 @@ Tài liệu này chứa toàn bộ lộ trình học tập lý thuyết, bài t�
 | Ngày | Công việc triển khai chi tiết | Trạng thái | Tài liệu / Source Code |
 | :---: | :--- | :---: | :--- |
 | **Day 15** | Cài đặt Arduino IDE. Lập trình đọc dữ liệu từ Cảm biến nhiệt độ phòng. Định dạng chuỗi truyền thông chuẩn gửi qua cổng Serial (USB). | ✅ `Done` | [Link]() |
-| **Day 16** | Tạo project **C# WPF App** (hoặc WinForms). Thiết kế UI: Khung kết nối COM Port, Nút bấm Connect/Disconnect, các ô hiển thị số liệu. | 🔄 `In Progress` | [Link]() |
-| **Day 17** | Sử dụng thư viện `System.IO.Ports.SerialPort` trong C# để thiết lập kết nối, bắt sự kiện nhận dữ liệu tự động `DataReceived`. | 🔄 `In Progress`| [Link]() |
-| **Day 18** | Viết hàm giải mã (Parse) chuỗi dữ liệu nhận được từ Arduino thời gian thực trên C# App. | 🔄 `In Progress | [Link]() |
-| **Day 19** | Áp dụng cơ chế bất đồng bộ (`Dispatcher.Invoke` trong WPF) để đẩy dữ liệu cảm biến lên UI một cách an toàn mà không gây đơ (freeze) giao diện. | 🔄 `In Progress | [Link]() |
+| **Day 16** | Tạo project **C# WPF App** (hoặc WinForms). Thiết kế UI: Khung kết nối COM Port, Nút bấm Connect/Disconnect, các ô hiển thị số liệu. | ✅ `Done` | [Link]() |
+| **Day 17** | Sử dụng thư viện `System.IO.Ports.SerialPort` trong C# để thiết lập kết nối, bắt sự kiện nhận dữ liệu tự động `DataReceived`. | ✅ `Done`| [Link]() |
+| **Day 18** | Viết hàm giải mã (Parse) chuỗi dữ liệu nhận được từ Arduino thời gian thực trên C# App. |✅ `Done`| [Link]() |
+| **Day 19** | Áp dụng cơ chế bất đồng bộ (`Dispatcher.Invoke` trong WPF) để đẩy dữ liệu cảm biến lên UI một cách an toàn mà không gây đơ (freeze) giao diện. | ✅ `Done`| [Link]() |
 
 ### 📸 Tuần 4 (Cuối) & Tuần 5: Tích hợp Webcam & Xử lý ảnh Vision Tìm Mực Nước (EmguCV)
 
 | Ngày | Công việc triển khai chi tiết | Trạng thái | Tài liệu / Source Code |
 | :---: | :--- | :---: | :--- |
-| **Day 20** | Cài đặt thư viện **EmguCV** (OpenCV for C#) vào Project thông qua Nuget Package Manager. | ⬜ ToDo | [Link]() |
-| **Day 21** | Lập trình nhúng luồng Webcam lên giao diện C# App. Đảm bảo hiển thị luồng video thời gian thực mượt mà. | ⬜ ToDo | [Link]() |
+| **Day 20** | Cài đặt thư viện **EmguCV** (OpenCV for C#) vào Project thông qua Nuget Package Manager. | ✅ `Done` | [Link]() |
+| **Day 21** | Lập trình nhúng luồng Webcam lên giao diện C# App. Đảm bảo hiển thị luồng video thời gian thực mượt mà. | 🔄 `In Progress | [Link]() |
 | **Day 22** | Nghiên cứu giải thuật lọc nhiễu ảnh và **Chuyển đổi ảnh xám (Grayscale)**, **Nhị phân hóa (Thresholding)** để tách biệt vùng nước và vùng trống trong can nhựa. | ⬜ ToDo | [Link]() |
 | **Day 23** | Áp dụng thuật toán **Phát hiện biên (Canny Edge Detection)** hoặc **Tìm đường bao (Find Contours)** để định vị đường thẳng nằm ngang của mực nước. | ⬜ ToDo | [Link]() |
 | **Day 24** | Viết thuật toán quy đổi toán học: Từ vị trí tọa độ Y (Pixel) của đường mực nước trong ảnh ra chiều cao mực nước thực tế (cm). | ⬜ ToDo | [Link]() |

@@ -31,10 +31,11 @@
         </GroupBox>
 
         <!-- KHUNG HIỂN THỊ DỮ LIỆU CẢM BIẾN -->
-        <Grid Grid.Row="1">
+        < Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1.3*"/>
             </Grid.ColumnDefinitions>
 
             <!-- Card Nhiệt độ -->
@@ -51,6 +52,21 @@
                     <TextBlock Text="💧 ĐỘ ẨM" FontSize="14" FontWeight="Bold" Foreground="#FF388E3C"/>
                     <TextBlock x:Name="txtHumidity" Text="--.-- %" FontSize="32" FontWeight="Bold" Foreground="#FF1B5E20" Margin="0,10,0,0"/>
                 </StackPanel>
+            </Border>
+            <!-- Card Camera  -->
+            <Border Grid.Column="2" Background="#FFF3E5F5" BorderBrush="#FFCE93D8" BorderThickness="1" CornerRadius="8" Margin="5,0,0,0" Padding="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="📷 WEBCAM TRỰC TIẾP" FontSize="13" FontWeight="Bold" Foreground="#FF7B1FA2" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                    <!-- Khung hiển thị hình ảnh Webcam -->
+                    <Border Grid.Row="1" Background="Black" CornerRadius="5" ClipToBounds="True">
+                        <Image x:Name="imgWebcam" Stretch="UniformToFill"/>
+                    </Border>
+                </Grid>
             </Border>
         </Grid>
 
