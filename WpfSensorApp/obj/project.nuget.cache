@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "JwCjF/pmv2I=",
+  "dgSpecHash": "erDhpFcZFQM=",
   "success": true,
   "projectFilePath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\WpfSensorApp\\WpfSensorApp.csproj",
   "expectedPackageFiles": [
@@ -27,7 +27,21 @@
     "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.native.system.io.ports\\10.0.10\\runtime.native.system.io.ports.10.0.10.nupkg.sha512",
     "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.osx-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.osx-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
     "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\10.0.10\\runtime.osx-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\system.drawing.common\\10.0.10\\system.drawing.common.10.0.10.nupkg.sha512",
     "C:\\Users\\surface laptop\\.nuget\\packages\\system.io.ports\\10.0.10\\system.io.ports.10.0.10.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference System.Drawing.Common will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
+      "projectPath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\WpfSensorApp\\WpfSensorApp.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\WpfSensorApp\\WpfSensorApp.csproj",
+      "libraryId": "System.Drawing.Common",
+      "targetGraphs": [
+        "net10.0-windows7.0"
+      ]
+    }
+  ]
 }

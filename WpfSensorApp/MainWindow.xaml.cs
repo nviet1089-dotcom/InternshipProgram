@@ -1,25 +1,85 @@
-﻿using System;
+﻿#nullable disable
+using System;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.IO.Ports;
 using System.Windows;
-using System.Globalization;
-using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Emgu.CV;
+using MediaBrushes = System.Windows.Media.Brushes;
 
 namespace WpfSensorApp
 {
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
+        private VideoCapture _capture;
+        private Mat _frame;
 
         public MainWindow()
         {
             InitializeComponent();
             _serialPort = new SerialPort();
             _serialPort.DataReceived += SerialPort_DataReceived;
+            _frame = new Mat();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             LoadComPorts();
+            StartWebcam();
+        }
+
+        private void StartWebcam()
+        {
+            try
+            {
+                _capture = new VideoCapture(0);
+                _capture.ImageGrabbed += ProcessFrame;
+                _capture.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Không thể mở Webcam: {ex.Message}", "Lỗi Camera", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ProcessFrame(object sender, EventArgs e)
+        {
+            if (_capture != null && _capture.Ptr != IntPtr.Zero)
+            {
+                _capture.Retrieve(_frame);
+                if (!_frame.IsEmpty)
+                {
+                    using (Bitmap bitmap = _frame.ToBitmap())
+                    {
+                        BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            imgWebcam.Source = bitmapImage;
+                        }));
+                    }
+                }
+            }
+        }
+
+        private BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
+        {
+            using (MemoryStream memory = new MemoryStream())
+            {
+                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
+                memory.Position = 0;
+
+                BitmapImage bitmapImage = new BitmapImage();
+                bitmapImage.BeginInit();
+                bitmapImage.StreamSource = memory;
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.EndInit();
+                bitmapImage.Freeze();
+
+                return bitmapImage;
+            }
         }
 
         private void LoadComPorts()
@@ -47,7 +107,6 @@ namespace WpfSensorApp
             LoadComPorts();
         }
 
-        // xử lí connect
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
             if (cboComPorts.SelectedItem == null)
@@ -68,7 +127,7 @@ namespace WpfSensorApp
                 btnRefresh.IsEnabled = false;
 
                 txtStatus.Text = $"Trạng thái: Đã kết nối tới {_serialPort.PortName}";
-                txtStatus.Foreground = Brushes.Green;
+                txtStatus.Foreground = MediaBrushes.Green;
             }
             catch (Exception ex)
             {
@@ -76,7 +135,6 @@ namespace WpfSensorApp
             }
         }
 
-        // sửa lỗi disconnect
         private void btnDisconnect_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -92,7 +150,7 @@ namespace WpfSensorApp
                 btnRefresh.IsEnabled = true;
 
                 txtStatus.Text = "Trạng thái: Đã ngắt kết nối";
-                txtStatus.Foreground = Brushes.Gray;
+                txtStatus.Foreground = MediaBrushes.Gray;
             }
             catch (Exception ex)
             {
@@ -112,7 +170,7 @@ namespace WpfSensorApp
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"lỗi đọc serial:{ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Lỗi đọc serial: {ex.Message}");
             }
         }
 
@@ -120,11 +178,11 @@ namespace WpfSensorApp
         {
             if (data.Contains("T:") && data.Contains("H:") && data.Contains("|"))
             {
-                //
-                if(data.StartsWith("$") && data.EndsWith("#"))
+                if (data.StartsWith("$") && data.EndsWith("#"))
                 {
                     data = data.Substring(1, data.Length - 2);
                 }
+
                 string[] parts = data.Split('|');
                 if (parts.Length == 2)
                 {
@@ -133,19 +191,18 @@ namespace WpfSensorApp
 
                     txtTemperature.Text = $"{tempStr} °C";
                     txtHumidity.Text = $"{humStr} %";
-                    //day19
 
-                    if(double.TryParse(tempStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double tempValue))
+                    if (double.TryParse(tempStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double tempValue))
                     {
                         if (tempValue > 35.0)
                         {
                             txtStatus.Text = $"CẢNH BÁO: Nhiệt độ vượt ngưỡng ({tempValue:F1} °C)!";
-                            txtStatus.Foreground = Brushes.Red;
+                            txtStatus.Foreground = MediaBrushes.Red;
                         }
                         else
                         {
                             txtStatus.Text = $"Trạng thái: Đã kết nối tới {_serialPort.PortName} | Hoạt động bình thường";
-                            txtStatus.Foreground = Brushes.Green;
+                            txtStatus.Foreground = MediaBrushes.Green;
                         }
                     }
                 }
@@ -154,11 +211,18 @@ namespace WpfSensorApp
 
         protected override void OnClosed(EventArgs e)
         {
+            if (_capture != null)
+            {
+                _capture.Stop();
+                _capture.Dispose();
+            }
+
             if (_serialPort != null && _serialPort.IsOpen)
             {
                 _serialPort.Close();
                 _serialPort.Dispose();
             }
+
             base.OnClosed(e);
         }
     }
