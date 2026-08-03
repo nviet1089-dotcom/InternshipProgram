@@ -60,6 +60,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     
                     <TextBlock Text="📷 CAMERA" FontSize="13" FontWeight="Bold" Foreground="#FF7B1FA2" HorizontalAlignment="Center" Margin="0,0,0,5"/>
@@ -67,6 +68,9 @@
                     <Border Grid.Row="1" Background="Black" CornerRadius="5" ClipToBounds="True">
                         <Image x:Name="imgWebcam" Stretch="UniformToFill"/>
                     </Border>
+                    <!-- NÚT BẤM KHỬ MÀU -->
+                    <Button x:Name="btnToggleGrayscale" Content=" grayy (Trắng/Đen)" Grid.Row="2" Height="28" Margin="0,8,0,0" 
+                    Background="#FF7E57C2" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
                 </Grid>
             </Border>
         </Grid>

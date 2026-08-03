@@ -7,15 +7,18 @@ using System.IO.Ports;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using Emgu.CV;
+using Emgu.CV.CvEnum; // SỬA LỖI 1: Thêm namespace này để dùng ColorConversion
 using MediaBrushes = System.Windows.Media.Brushes;
 
 namespace WpfSensorApp
 {
     public partial class MainWindow : Window
     {
+        // SỬA LỖI 2: Khai báo đầy đủ các biến ở đầu class (đoạn dòng 15-38 bị mất)
         private SerialPort _serialPort;
         private VideoCapture _capture;
         private Mat _frame;
+        private bool _isGrayscale = false; // Biến cờ kiểm tra trạng thái khử màu
 
         public MainWindow()
         {
@@ -45,6 +48,24 @@ namespace WpfSensorApp
             }
         }
 
+        // BẮT SỰ KIỆN CLICK NÚT KHỬ MÀU
+        private void btnToggleGrayscale_Click(object sender, RoutedEventArgs e)
+        {
+            _isGrayscale = !_isGrayscale; // Đảo ngược trạng thái bật/tắt
+
+            if (_isGrayscale)
+            {
+                btnToggleGrayscale.Content = "Hiện màu nguyên bản";
+                btnToggleGrayscale.Background = MediaBrushes.DarkGray;
+            }
+            else
+            {
+                btnToggleGrayscale.Content = "Khử màu (Trắng/Đen)";
+                btnToggleGrayscale.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF7E57C2");
+            }
+        }
+
+        // XỬ LÝ KHUNG HÌNH THỜI GIAN THỰC
         private void ProcessFrame(object sender, EventArgs e)
         {
             if (_capture != null && _capture.Ptr != IntPtr.Zero)
@@ -52,13 +73,28 @@ namespace WpfSensorApp
                 _capture.Retrieve(_frame);
                 if (!_frame.IsEmpty)
                 {
-                    using (Bitmap bitmap = _frame.ToBitmap())
+                    using (Mat processedFrame = new Mat())
                     {
-                        BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
-                        Dispatcher.BeginInvoke(new Action(() =>
+                        // Kiểm tra nếu bật tính năng khử màu
+                        if (_isGrayscale)
                         {
-                            imgWebcam.Source = bitmapImage;
-                        }));
+                            // Chuyển đổi từ BGR sang Grayscale (Xám)
+                            CvInvoke.CvtColor(_frame, processedFrame, ColorConversion.Bgr2Gray);
+                        }
+                        else
+                        {
+                            // Giữ nguyên khung hình gốc
+                            _frame.CopyTo(processedFrame);
+                        }
+
+                        using (Bitmap bitmap = processedFrame.ToBitmap())
+                        {
+                            BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
+                            Dispatcher.BeginInvoke(new Action(() =>
+                            {
+                                imgWebcam.Source = bitmapImage;
+                            }));
+                        }
                     }
                 }
             }
