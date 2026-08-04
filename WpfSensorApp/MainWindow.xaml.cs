@@ -81,18 +81,25 @@ namespace WpfSensorApp
                 {
                     using (Mat processedFrame = _frame.Clone())
                     {
+                        // 1. Nếu bật khử màu: Chuyển về Gray rồi chuyển lại BGR 3 kênh.
+                        // Giúp khung cảnh biến thành trắng đen nhưng vẫn vẽ được nét ĐỎ đè lên.
+                        if (_isGrayscale)
+                        {
+                            CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
+                            CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Gray2Bgr);
+                        }
+
+                        // 2. Nhận diện vị trí Y mực nước
                         double detectedWaterYPixel = DetectWaterLevelY(processedFrame);
                         double waterHeightCm = CalculateWaterHeightCm(detectedWaterYPixel);
+
+                        // 3. Vẽ thước đo & vạch chỉ thị màu đỏ
+                        DrawRulerAndWaterMarker(processedFrame, detectedWaterYPixel, waterHeightCm);
 
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
                             txtWaterLevel.Text = $"{waterHeightCm:F1} cm";
                         }));
-
-                        if (_isGrayscale)
-                        {
-                            CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
-                        }
 
                         using (Bitmap bitmap = processedFrame.ToBitmap())
                         {
@@ -133,7 +140,6 @@ namespace WpfSensorApp
                     if (Math.Abs(line.P1.Y - line.P2.Y) < 10)
                     {
                         double currentY = (line.P1.Y + line.P2.Y) / 2.0;
-                        CvInvoke.Line(image, line.P1, line.P2, new MCvScalar(0, 0, 255), 2);
 
                         if (currentY >= Y_TOP_PIXEL && currentY <= Y_BOTTOM_PIXEL)
                         {
@@ -143,11 +149,41 @@ namespace WpfSensorApp
                     }
                 }
 
-                CvInvoke.PutText(image, $"Line Y: {bestY:F0}px", new Point(20, 40), 
-                    FontFace.HersheySimplex, 0.7, new MCvScalar(0, 255, 0), 2);
-
                 return bestY;
             }
+        }
+
+        private void DrawRulerAndWaterMarker(Mat image, double currentYPixel, double heightCm)
+        {
+            int rulerX = image.Width - 80; // Vị trí đặt thước mép phải
+
+            // A. Vẽ trục dọc của thước (Màu vàng)
+            CvInvoke.Line(image, new Point(rulerX, (int)Y_TOP_PIXEL), new Point(rulerX, (int)Y_BOTTOM_PIXEL), new MCvScalar(0, 255, 255), 2);
+
+            // B. Vẽ các vạch chia cm trên thước (0cm - 20cm)
+            for (int cm = 0; cm <= (int)MAX_WATER_HEIGHT_CM; cm += 2)
+            {
+                double tickY = Y_BOTTOM_PIXEL - ((double)cm / MAX_WATER_HEIGHT_CM) * (Y_BOTTOM_PIXEL - Y_TOP_PIXEL);
+                int tickLength = (cm % 5 == 0) ? 14 : 7; // Vạch chẵn 5cm dài hơn
+
+                CvInvoke.Line(image, new Point(rulerX, (int)tickY), new Point(rulerX + tickLength, (int)tickY), new MCvScalar(0, 255, 255), 2);
+
+                if (cm % 5 == 0)
+                {
+                    CvInvoke.PutText(image, $"{cm}cm", new Point(rulerX + 16, (int)tickY + 4),
+                        FontFace.HersheySimplex, 0.4, new MCvScalar(255, 255, 255), 1);
+                }
+            }
+
+            // C. Vẽ vạch ngang ĐỎ chỉ mực nước thực tế qua toàn màn hình
+            CvInvoke.Line(image, new Point(20, (int)currentYPixel), new Point(rulerX, (int)currentYPixel), new MCvScalar(0, 0, 255), 2);
+
+            // D. Vẽ con trỏ/mũi tên màu ĐỎ tại vị trí thước
+            CvInvoke.Circle(image, new Point(rulerX, (int)currentYPixel), 5, new MCvScalar(0, 0, 255), -1);
+
+            // E. Hiển thị chữ Line Y xanh lá
+            CvInvoke.PutText(image, $"Line Y: {currentYPixel:F0}px", new Point(20, 40), 
+                FontFace.HersheySimplex, 0.7, new MCvScalar(0, 255, 0), 2);
         }
 
         private double CalculateWaterHeightCm(double yPixel)
