@@ -9,11 +9,12 @@ using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using MediaBrushes = System.Windows.Media.Brushes;
 
-// Alias cố định kiểu Point và Size từ System.Drawing
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
+using Rectangle = System.Drawing.Rectangle;
 
 namespace WpfSensorApp
 {
@@ -23,9 +24,8 @@ namespace WpfSensorApp
         private VideoCapture _capture;
         private Mat _frame;
         private bool _isGrayscale = false;
+        private bool _showOverlay = false;
 
-        private const double Y_BOTTOM_PIXEL = 400.0; 
-        private const double Y_TOP_PIXEL = 100.0;    
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
         public MainWindow()
@@ -42,6 +42,7 @@ namespace WpfSensorApp
             StartWebcam();
         }
 
+        // ================= XỬ LÝ CỤM 3: CAMERA & NÚT ĐIỀU KHIỂN =================
         private void StartWebcam()
         {
             try
@@ -56,20 +57,20 @@ namespace WpfSensorApp
             }
         }
 
+        // Nút: Khử màu (Trắng/Đen)
         private void btnToggleGrayscale_Click(object sender, RoutedEventArgs e)
         {
             _isGrayscale = !_isGrayscale;
+            btnToggleGrayscale.Content = _isGrayscale ? "Hiện màu nguyên bản" : "Khử màu (Trắng/Đen)";
+            btnToggleGrayscale.Background = _isGrayscale ? MediaBrushes.DarkGray : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF7E57C2");
+        }
 
-            if (_isGrayscale)
-            {
-                btnToggleGrayscale.Content = "Hiện màu nguyên bản";
-                btnToggleGrayscale.Background = MediaBrushes.DarkGray;
-            }
-            else
-            {
-                btnToggleGrayscale.Content = "Khử màu (Trắng/Đen)";
-                btnToggleGrayscale.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF7E57C2");
-            }
+        // Nút: Hiển thị Thước & Vạch Mực Nước
+        private void btnToggleOverlay_Click(object sender, RoutedEventArgs e)
+        {
+            _showOverlay = !_showOverlay;
+            btnToggleOverlay.Content = _showOverlay ? "Ẩn Thước & Vạch Mực Nước" : "Hiển thị Thước & Vạch Mực Nước";
+            btnToggleOverlay.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(_showOverlay ? "#FFE53935" : "#FF0288D1");
         }
 
         private void ProcessFrame(object sender, EventArgs e)
@@ -81,26 +82,22 @@ namespace WpfSensorApp
                 {
                     using (Mat processedFrame = _frame.Clone())
                     {
-                        // 1. Nếu bật khử màu: Chuyển về Gray rồi chuyển lại BGR 3 kênh.
-                        // Giúp khung cảnh biến thành trắng đen nhưng vẫn vẽ được nét ĐỎ đè lên.
                         if (_isGrayscale)
                         {
                             CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
                             CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Gray2Bgr);
                         }
 
-                        // 2. Nhận diện vị trí Y mực nước
-                        double detectedWaterYPixel = DetectWaterLevelY(processedFrame);
-                        double waterHeightCm = CalculateWaterHeightCm(detectedWaterYPixel);
+                        // Tính toán mực nước và vẽ thước lên Card Video
+                        double waterHeightCm = ProcessContainerAndWaterLevel(processedFrame);
 
-                        // 3. Vẽ thước đo & vạch chỉ thị màu đỏ
-                        DrawRulerAndWaterMarker(processedFrame, detectedWaterYPixel, waterHeightCm);
-
+                        // Cập nhật CỤM 2: Card Mực nước
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
                             txtWaterLevel.Text = $"{waterHeightCm:F1} cm";
                         }));
 
+                        // Cập nhật CỤM 3: Card Khung Video Camera
                         using (Bitmap bitmap = processedFrame.ToBitmap())
                         {
                             BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
@@ -114,7 +111,7 @@ namespace WpfSensorApp
             }
         }
 
-        private double DetectWaterLevelY(Mat image)
+        private double ProcessContainerAndWaterLevel(Mat image)
         {
             using (Mat gray = new Mat())
             using (Mat blurred = new Mat())
@@ -124,75 +121,77 @@ namespace WpfSensorApp
                 CvInvoke.GaussianBlur(gray, blurred, new Size(5, 5), 0);
                 CvInvoke.Canny(blurred, edges, 50, 150);
 
-                LineSegment2D[] lines = CvInvoke.HoughLinesP(
-                    edges, 
-                    1,                 
-                    Math.PI / 180,     
-                    50,                
-                    80,                
-                    10                 
-                );
+                Rectangle bestContainer = Rectangle.Empty;
+                double maxArea = 0;
 
-                double bestY = Y_BOTTOM_PIXEL; 
+                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                {
+                    CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+
+                    for (int i = 0; i < contours.Size; i++)
+                    {
+                        Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
+                        double area = rect.Width * rect.Height;
+
+                        if (rect.Height > 80 && rect.Width > 40 && rect.Height > rect.Width && area > maxArea)
+                        {
+                            maxArea = area;
+                            bestContainer = rect;
+                        }
+                    }
+                }
+
+                if (bestContainer.IsEmpty)
+                {
+                    if (_showOverlay)
+                    {
+                        CvInvoke.PutText(image, "Khong tim thay binh nuoc...", new Point(20, 40),
+                            FontFace.HersheySimplex, 0.6, new MCvScalar(0, 165, 255), 2);
+                    }
+                    return 0.0;
+                }
+
+                LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
+                double waterY = bestContainer.Bottom;
 
                 foreach (var line in lines)
                 {
-                    if (Math.Abs(line.P1.Y - line.P2.Y) < 10)
+                    if (line.P1.X >= bestContainer.Left - 10 && line.P2.X <= bestContainer.Right + 10 &&
+                        Math.Abs(line.P1.Y - line.P2.Y) < 12)
                     {
                         double currentY = (line.P1.Y + line.P2.Y) / 2.0;
-
-                        if (currentY >= Y_TOP_PIXEL && currentY <= Y_BOTTOM_PIXEL)
+                        if (currentY > bestContainer.Top && currentY < bestContainer.Bottom)
                         {
-                            bestY = currentY;
+                            waterY = currentY;
                             break;
                         }
                     }
                 }
 
-                return bestY;
-            }
-        }
-
-        private void DrawRulerAndWaterMarker(Mat image, double currentYPixel, double heightCm)
-        {
-            int rulerX = image.Width - 80; // Vị trí đặt thước mép phải
-
-            // A. Vẽ trục dọc của thước (Màu vàng)
-            CvInvoke.Line(image, new Point(rulerX, (int)Y_TOP_PIXEL), new Point(rulerX, (int)Y_BOTTOM_PIXEL), new MCvScalar(0, 255, 255), 2);
-
-            // B. Vẽ các vạch chia cm trên thước (0cm - 20cm)
-            for (int cm = 0; cm <= (int)MAX_WATER_HEIGHT_CM; cm += 2)
-            {
-                double tickY = Y_BOTTOM_PIXEL - ((double)cm / MAX_WATER_HEIGHT_CM) * (Y_BOTTOM_PIXEL - Y_TOP_PIXEL);
-                int tickLength = (cm % 5 == 0) ? 14 : 7; // Vạch chẵn 5cm dài hơn
-
-                CvInvoke.Line(image, new Point(rulerX, (int)tickY), new Point(rulerX + tickLength, (int)tickY), new MCvScalar(0, 255, 255), 2);
-
-                if (cm % 5 == 0)
+                // Vẽ thước đo & vạch nước khi bấm nút ở Cụm 3
+                if (_showOverlay)
                 {
-                    CvInvoke.PutText(image, $"{cm}cm", new Point(rulerX + 16, (int)tickY + 4),
-                        FontFace.HersheySimplex, 0.4, new MCvScalar(255, 255, 255), 1);
+                    CvInvoke.Line(image, new Point(bestContainer.Left, bestContainer.Top), new Point(bestContainer.Left, bestContainer.Bottom), new MCvScalar(255, 255, 0), 3);
+                    CvInvoke.Line(image, new Point(bestContainer.Right, bestContainer.Top), new Point(bestContainer.Right, bestContainer.Bottom), new MCvScalar(255, 255, 0), 3);
+                    CvInvoke.Line(image, new Point(bestContainer.Left, (int)waterY), new Point(bestContainer.Right, (int)waterY), new MCvScalar(0, 0, 255), 3);
+
+                    int rulerX = Math.Max(40, bestContainer.Left - 20);
+                    CvInvoke.Line(image, new Point(rulerX, bestContainer.Bottom), new Point(rulerX, bestContainer.Top), new MCvScalar(0, 255, 255), 2);
+
+                    for (int cm = 0; cm <= (int)MAX_WATER_HEIGHT_CM; cm += 5)
+                    {
+                        double tickY = bestContainer.Bottom - ((double)cm / MAX_WATER_HEIGHT_CM) * bestContainer.Height;
+                        CvInvoke.Line(image, new Point(rulerX - 6, (int)tickY), new Point(rulerX, (int)tickY), new MCvScalar(0, 255, 255), 2);
+                        CvInvoke.PutText(image, $"{cm}cm", new Point(rulerX - 38, (int)tickY + 4),
+                            FontFace.HersheySimplex, 0.4, new MCvScalar(255, 255, 255), 1);
+                    }
+
+                    CvInvoke.Circle(image, new Point(rulerX, (int)waterY), 5, new MCvScalar(0, 0, 255), -1);
                 }
+
+                double waterHeightCm = ((bestContainer.Bottom - waterY) / bestContainer.Height) * MAX_WATER_HEIGHT_CM;
+                return Math.Max(0.0, waterHeightCm);
             }
-
-            // C. Vẽ vạch ngang ĐỎ chỉ mực nước thực tế qua toàn màn hình
-            CvInvoke.Line(image, new Point(20, (int)currentYPixel), new Point(rulerX, (int)currentYPixel), new MCvScalar(0, 0, 255), 2);
-
-            // D. Vẽ con trỏ/mũi tên màu ĐỎ tại vị trí thước
-            CvInvoke.Circle(image, new Point(rulerX, (int)currentYPixel), 5, new MCvScalar(0, 0, 255), -1);
-
-            // E. Hiển thị chữ Line Y xanh lá
-            CvInvoke.PutText(image, $"Line Y: {currentYPixel:F0}px", new Point(20, 40), 
-                FontFace.HersheySimplex, 0.7, new MCvScalar(0, 255, 0), 2);
-        }
-
-        private double CalculateWaterHeightCm(double yPixel)
-        {
-            if (yPixel > Y_BOTTOM_PIXEL) return 0.0;
-            if (yPixel < Y_TOP_PIXEL) return MAX_WATER_HEIGHT_CM;
-
-            double heightCm = ((Y_BOTTOM_PIXEL - yPixel) / (Y_BOTTOM_PIXEL - Y_TOP_PIXEL)) * MAX_WATER_HEIGHT_CM;
-            return Math.Max(0.0, heightCm);
         }
 
         private BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
@@ -213,6 +212,7 @@ namespace WpfSensorApp
             }
         }
 
+        // ================= XỬ LÝ CỤM 1: KẾT NỐI SERIAL & CỤM 4: STATUSBAR =================
         private void LoadComPorts()
         {
             cboComPorts.Items.Clear();
@@ -238,6 +238,7 @@ namespace WpfSensorApp
                 cboComPorts.IsEnabled = false;
                 btnRefresh.IsEnabled = false;
 
+                // Cập nhật CỤM 4: Thanh trạng thái
                 txtStatus.Text = $"Trạng thái: Đã kết nối tới {_serialPort.PortName}";
                 txtStatus.Foreground = MediaBrushes.Green;
             }
@@ -257,6 +258,7 @@ namespace WpfSensorApp
                 cboComPorts.IsEnabled = true;
                 btnRefresh.IsEnabled = true;
 
+                // Cập nhật CỤM 4: Thanh trạng thái
                 txtStatus.Text = "Trạng thái: Đã ngắt kết nối";
                 txtStatus.Foreground = MediaBrushes.Gray;
             }
@@ -266,6 +268,7 @@ namespace WpfSensorApp
             }
         }
 
+        // ================= CẬP NHẬT CỤM 2: CARD NHIỆT ĐỘ & ĐỘ ẨM =================
         private void SerialPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
             try
@@ -291,6 +294,7 @@ namespace WpfSensorApp
                     string tempStr = parts[0].Replace("T:", "").Trim();
                     string humStr = parts[1].Replace("H:", "").Trim();
 
+                    // Ghi dữ liệu vào Card Nhiệt độ & Card Độ ẩm
                     txtTemperature.Text = $"{tempStr} °C";
                     txtHumidity.Text = $"{humStr} %";
                 }
