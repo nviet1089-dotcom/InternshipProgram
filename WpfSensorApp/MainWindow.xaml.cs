@@ -7,18 +7,26 @@ using System.IO.Ports;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using Emgu.CV;
-using Emgu.CV.CvEnum; // SỬA LỖI 1: Thêm namespace này để dùng ColorConversion
+using Emgu.CV.CvEnum;
+using Emgu.CV.Structure;
 using MediaBrushes = System.Windows.Media.Brushes;
+
+// Alias cố định kiểu Point và Size từ System.Drawing
+using Point = System.Drawing.Point;
+using Size = System.Drawing.Size;
 
 namespace WpfSensorApp
 {
     public partial class MainWindow : Window
     {
-        // SỬA LỖI 2: Khai báo đầy đủ các biến ở đầu class (đoạn dòng 15-38 bị mất)
         private SerialPort _serialPort;
         private VideoCapture _capture;
         private Mat _frame;
-        private bool _isGrayscale = false; // Biến cờ kiểm tra trạng thái khử màu
+        private bool _isGrayscale = false;
+
+        private const double Y_BOTTOM_PIXEL = 400.0; 
+        private const double Y_TOP_PIXEL = 100.0;    
+        private const double MAX_WATER_HEIGHT_CM = 20.0;
 
         public MainWindow()
         {
@@ -48,10 +56,9 @@ namespace WpfSensorApp
             }
         }
 
-        // BẮT SỰ KIỆN CLICK NÚT KHỬ MÀU
         private void btnToggleGrayscale_Click(object sender, RoutedEventArgs e)
         {
-            _isGrayscale = !_isGrayscale; // Đảo ngược trạng thái bật/tắt
+            _isGrayscale = !_isGrayscale;
 
             if (_isGrayscale)
             {
@@ -65,7 +72,6 @@ namespace WpfSensorApp
             }
         }
 
-        // XỬ LÝ KHUNG HÌNH THỜI GIAN THỰC
         private void ProcessFrame(object sender, EventArgs e)
         {
             if (_capture != null && _capture.Ptr != IntPtr.Zero)
@@ -73,18 +79,19 @@ namespace WpfSensorApp
                 _capture.Retrieve(_frame);
                 if (!_frame.IsEmpty)
                 {
-                    using (Mat processedFrame = new Mat())
+                    using (Mat processedFrame = _frame.Clone())
                     {
-                        // Kiểm tra nếu bật tính năng khử màu
+                        double detectedWaterYPixel = DetectWaterLevelY(processedFrame);
+                        double waterHeightCm = CalculateWaterHeightCm(detectedWaterYPixel);
+
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            txtWaterLevel.Text = $"{waterHeightCm:F1} cm";
+                        }));
+
                         if (_isGrayscale)
                         {
-                            // Chuyển đổi từ BGR sang Grayscale (Xám)
-                            CvInvoke.CvtColor(_frame, processedFrame, ColorConversion.Bgr2Gray);
-                        }
-                        else
-                        {
-                            // Giữ nguyên khung hình gốc
-                            _frame.CopyTo(processedFrame);
+                            CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
                         }
 
                         using (Bitmap bitmap = processedFrame.ToBitmap())
@@ -98,6 +105,58 @@ namespace WpfSensorApp
                     }
                 }
             }
+        }
+
+        private double DetectWaterLevelY(Mat image)
+        {
+            using (Mat gray = new Mat())
+            using (Mat blurred = new Mat())
+            using (Mat edges = new Mat())
+            {
+                CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
+                CvInvoke.GaussianBlur(gray, blurred, new Size(5, 5), 0);
+                CvInvoke.Canny(blurred, edges, 50, 150);
+
+                LineSegment2D[] lines = CvInvoke.HoughLinesP(
+                    edges, 
+                    1,                 
+                    Math.PI / 180,     
+                    50,                
+                    80,                
+                    10                 
+                );
+
+                double bestY = Y_BOTTOM_PIXEL; 
+
+                foreach (var line in lines)
+                {
+                    if (Math.Abs(line.P1.Y - line.P2.Y) < 10)
+                    {
+                        double currentY = (line.P1.Y + line.P2.Y) / 2.0;
+                        CvInvoke.Line(image, line.P1, line.P2, new MCvScalar(0, 0, 255), 2);
+
+                        if (currentY >= Y_TOP_PIXEL && currentY <= Y_BOTTOM_PIXEL)
+                        {
+                            bestY = currentY;
+                            break;
+                        }
+                    }
+                }
+
+                CvInvoke.PutText(image, $"Line Y: {bestY:F0}px", new Point(20, 40), 
+                    FontFace.HersheySimplex, 0.7, new MCvScalar(0, 255, 0), 2);
+
+                return bestY;
+            }
+        }
+
+        private double CalculateWaterHeightCm(double yPixel)
+        {
+            if (yPixel > Y_BOTTOM_PIXEL) return 0.0;
+            if (yPixel < Y_TOP_PIXEL) return MAX_WATER_HEIGHT_CM;
+
+            double heightCm = ((Y_BOTTOM_PIXEL - yPixel) / (Y_BOTTOM_PIXEL - Y_TOP_PIXEL)) * MAX_WATER_HEIGHT_CM;
+            return Math.Max(0.0, heightCm);
         }
 
         private BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
@@ -122,35 +181,16 @@ namespace WpfSensorApp
         {
             cboComPorts.Items.Clear();
             string[] ports = SerialPort.GetPortNames();
-
-            foreach (string port in ports)
-            {
-                cboComPorts.Items.Add(port);
-            }
-
-            if (cboComPorts.Items.Count > 0)
-            {
-                cboComPorts.SelectedIndex = 0;
-            }
-            else
-            {
-                txtStatus.Text = "Trạng thái: Không tìm thấy cổng COM!";
-            }
+            foreach (string port in ports) cboComPorts.Items.Add(port);
+            if (cboComPorts.Items.Count > 0) cboComPorts.SelectedIndex = 0;
+            else txtStatus.Text = "Trạng thái: Không tìm thấy cổng COM!";
         }
 
-        private void btnRefresh_Click(object sender, RoutedEventArgs e)
-        {
-            LoadComPorts();
-        }
+        private void btnRefresh_Click(object sender, RoutedEventArgs e) => LoadComPorts();
 
         private void btnConnect_Click(object sender, RoutedEventArgs e)
         {
-            if (cboComPorts.SelectedItem == null)
-            {
-                MessageBox.Show("Vui lòng chọn cổng COM!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
+            if (cboComPorts.SelectedItem == null) return;
             try
             {
                 _serialPort.PortName = cboComPorts.SelectedItem.ToString();
@@ -175,11 +215,7 @@ namespace WpfSensorApp
         {
             try
             {
-                if (_serialPort.IsOpen)
-                {
-                    _serialPort.Close();
-                }
-
+                if (_serialPort.IsOpen) _serialPort.Close();
                 btnConnect.IsEnabled = true;
                 btnDisconnect.IsEnabled = false;
                 cboComPorts.IsEnabled = true;
@@ -199,10 +235,7 @@ namespace WpfSensorApp
             try
             {
                 string line = _serialPort.ReadLine().Trim();
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    ParseAndDisplayData(line);
-                }));
+                Dispatcher.BeginInvoke(new Action(() => ParseAndDisplayData(line)));
             }
             catch (Exception ex)
             {
@@ -214,10 +247,7 @@ namespace WpfSensorApp
         {
             if (data.Contains("T:") && data.Contains("H:") && data.Contains("|"))
             {
-                if (data.StartsWith("$") && data.EndsWith("#"))
-                {
-                    data = data.Substring(1, data.Length - 2);
-                }
+                if (data.StartsWith("$") && data.EndsWith("#")) data = data.Substring(1, data.Length - 2);
 
                 string[] parts = data.Split('|');
                 if (parts.Length == 2)
@@ -227,38 +257,14 @@ namespace WpfSensorApp
 
                     txtTemperature.Text = $"{tempStr} °C";
                     txtHumidity.Text = $"{humStr} %";
-
-                    if (double.TryParse(tempStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double tempValue))
-                    {
-                        if (tempValue > 35.0)
-                        {
-                            txtStatus.Text = $"CẢNH BÁO: Nhiệt độ vượt ngưỡng ({tempValue:F1} °C)!";
-                            txtStatus.Foreground = MediaBrushes.Red;
-                        }
-                        else
-                        {
-                            txtStatus.Text = $"Trạng thái: Đã kết nối tới {_serialPort.PortName} | Hoạt động bình thường";
-                            txtStatus.Foreground = MediaBrushes.Green;
-                        }
-                    }
                 }
             }
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            if (_capture != null)
-            {
-                _capture.Stop();
-                _capture.Dispose();
-            }
-
-            if (_serialPort != null && _serialPort.IsOpen)
-            {
-                _serialPort.Close();
-                _serialPort.Dispose();
-            }
-
+            if (_capture != null) { _capture.Stop(); _capture.Dispose(); }
+            if (_serialPort != null && _serialPort.IsOpen) { _serialPort.Close(); _serialPort.Dispose(); }
             base.OnClosed(e);
         }
     }
