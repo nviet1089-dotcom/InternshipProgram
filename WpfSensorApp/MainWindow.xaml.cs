@@ -32,9 +32,16 @@ namespace WpfSensorApp
 
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
+        // BỔ SUNG: Khai báo ViewModel
+        public MainViewModel ViewModel { get; set; } = new MainViewModel();
+
         public MainWindow()
         {
             InitializeComponent();
+
+            // BỔ SUNG: Gán DataContext cho Window để XAML Binding được dữ liệu
+            this.DataContext = ViewModel;
+
             _serialPort = new SerialPort();
             _serialPort.DataReceived += SerialPort_DataReceived;
             _frame = new Mat();
@@ -95,7 +102,8 @@ namespace WpfSensorApp
 
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            txtWaterLevel.Text = $"{waterHeightCm:F1} cm";
+                            // BỔ SUNG: Cập nhật mực nước qua ViewModel
+                            ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
                         }));
 
                         using (Bitmap bitmap = processedFrame.ToBitmap())
@@ -226,7 +234,12 @@ namespace WpfSensorApp
             string[] ports = SerialPort.GetPortNames();
             foreach (string port in ports) cboComPorts.Items.Add(port);
             if (cboComPorts.Items.Count > 0) cboComPorts.SelectedIndex = 0;
-            else txtStatus.Text = "Trạng thái: Không tìm thấy cổng COM!";
+            else 
+            {
+                // BỔ SUNG: Cập nhật Trạng thái qua ViewModel
+                ViewModel.StatusText = "Trạng thái: Không tìm thấy cổng COM!";
+                ViewModel.StatusColor = MediaBrushes.Red;
+            }
         }
 
         private void btnRefresh_Click(object sender, RoutedEventArgs e) => LoadComPorts();
@@ -245,8 +258,9 @@ namespace WpfSensorApp
                 cboComPorts.IsEnabled = false;
                 btnRefresh.IsEnabled = false;
 
-                txtStatus.Text = $"Trạng thái: Đã kết nối tới {_serialPort.PortName}";
-                txtStatus.Foreground = MediaBrushes.Green;
+                // BỔ SUNG: Cập nhật Trạng thái qua ViewModel
+                ViewModel.StatusText = $"Trạng thái: Đã kết nối tới {_serialPort.PortName}";
+                ViewModel.StatusColor = MediaBrushes.Green;
             }
             catch (Exception ex)
             {
@@ -264,8 +278,9 @@ namespace WpfSensorApp
                 cboComPorts.IsEnabled = true;
                 btnRefresh.IsEnabled = true;
 
-                txtStatus.Text = "Trạng thái: Đã ngắt kết nối";
-                txtStatus.Foreground = MediaBrushes.Gray;
+                // BỔ SUNG: Cập nhật Trạng thái qua ViewModel
+                ViewModel.StatusText = "Trạng thái: Đã ngắt kết nối";
+                ViewModel.StatusColor = MediaBrushes.Gray;
             }
             catch (Exception ex)
             {
@@ -298,8 +313,9 @@ namespace WpfSensorApp
                     string tempStr = parts[0].Replace("T:", "").Trim();
                     string humStr = parts[1].Replace("H:", "").Trim();
 
-                    txtTemperature.Text = $"{tempStr} °C";
-                    txtHumidity.Text = $"{humStr} %";
+                    // BỔ SUNG: Cập nhật Nhiệt độ & Độ ẩm qua ViewModel
+                    ViewModel.Temperature = $"{tempStr} °C";
+                    ViewModel.Humidity = $"{humStr} %";
                 }
             }
         }

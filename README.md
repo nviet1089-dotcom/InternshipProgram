@@ -55,17 +55,17 @@ Tài liệu này chứa toàn bộ lộ trình học tập lý thuyết, bài t�
 | Ngày | Công việc triển khai chi tiết | Trạng thái | Tài liệu / Source Code |
 | :---: | :--- | :---: | :--- |
 | **Day 20** | Cài đặt thư viện **EmguCV** (OpenCV for C#) vào Project thông qua Nuget Package Manager. | ✅ `Done` | [Link]() |
-| **Day 21** | Lập trình nhúng luồng Webcam lên giao diện C# App. Đảm bảo hiển thị luồng video thời gian thực mượt mà. | 🔄 `In Progress | [Link]() |
-| **Day 22** | Nghiên cứu giải thuật lọc nhiễu ảnh và **Chuyển đổi ảnh xám (Grayscale)**, **Nhị phân hóa (Thresholding)** để tách biệt vùng nước và vùng trống trong can nhựa. | ⬜ ToDo | [Link]() |
-| **Day 23** | Áp dụng thuật toán **Phát hiện biên (Canny Edge Detection)** hoặc **Tìm đường bao (Find Contours)** để định vị đường thẳng nằm ngang của mực nước. | ⬜ ToDo | [Link]() |
-| **Day 24** | Viết thuật toán quy đổi toán học: Từ vị trí tọa độ Y (Pixel) của đường mực nước trong ảnh ra chiều cao mực nước thực tế (cm). | ⬜ ToDo | [Link]() |
+| **Day 21** | Lập trình nhúng luồng Webcam lên giao diện C# App. Đảm bảo hiển thị luồng video thời gian thực mượt mà. | ✅ `Done` | [Link]() |
+| **Day 22** | Nghiên cứu giải thuật lọc nhiễu ảnh và **Chuyển đổi ảnh xám (Grayscale)**, **Nhị phân hóa (Thresholding)** để tách biệt vùng nước và vùng trống trong can nhựa. | ✅ `Done`  | [Link]() |
+| **Day 23** | Áp dụng thuật toán **Phát hiện biên (Canny Edge Detection)** hoặc **Tìm đường bao (Find Contours)** để định vị đường thẳng nằm ngang của mực nước. | ✅ `Done`| [Link]() |
+| **Day 24** | Viết thuật toán quy đổi toán học: Từ vị trí tọa độ Y (Pixel) của đường mực nước trong ảnh ra chiều cao mực nước thực tế (cm). | ✅ `Done` | [Link]() |
 
 ### 🚨 Tuần 5 (Cuối) & Tuần 6: Xử lý logic Cảnh báo & Tối ưu luồng hệ thống
 
 | Ngày | Công việc triển khai chi tiết | Trạng thái | Tài liệu / Source Code |
 | :---: | :--- | :---: | :--- |
-| **Day 25** | Thiết kế ô nhập "Ngưỡng cảnh báo" (Threshold) cho Nhiệt độ và Mực nước trực tiếp trên giao diện C# App. | ⬜ ToDo | [Link]() |
-| **Day 26** | Viết logic so sánh liên tục dữ liệu đo (từ Arduino và từ Vision) với Ngưỡng cài đặt. Nếu vượt ngưỡng, kích hoạt trạng thái báo động. | ⬜ ToDo | [Link]() |
+| **Day 25** | Thiết kế ô nhập "Ngưỡng cảnh báo" (Threshold) cho Nhiệt độ và Mực nước trực tiếp trên giao diện C# App. | 🔄 `In Progress  | [Link]() |
+| **Day 26** | Viết logic so sánh liên tục dữ liệu đo (từ Arduino và từ Vision) với Ngưỡng cài đặt. Nếu vượt ngưỡng, kích hoạt trạng thái báo động. | 🔄 `In Progress | [Link]() |
 | **Day 27** | Lập trình hiệu ứng giao diện: **Nhấp nháy Đỏ/Trắng** tại vùng cảnh báo để thu hút sự chú ý của người dùng. | ⬜ ToDo | [Link]() |
 | **Day 28** | Tích hợp tính năng tự động: Khi có Cảnh báo đỏ, ứng dụng tự động chụp lại một bức ảnh từ Webcam (Snapshot) lưu vào máy tính để lưu vết. | ⬜ ToDo | [Link]() |
 | **Day 29** | Thiết lập truyền thông ngược: C# gửi lệnh xuống Arduino để bật còi Buzzer hoặc đèn LED cảnh báo vật lý trên bo mạch khi phần mềm báo động. | ⬜ ToDo | [Link]() |
