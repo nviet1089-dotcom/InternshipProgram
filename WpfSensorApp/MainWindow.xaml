@@ -1,7 +1,7 @@
 ﻿<Window x:Class="WpfSensorApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Arduino Sensor &amp; Water Level Monitor" Height="500" Width="850"
+        Title="Arduino Sensor &amp; Water Level Monitor" Height="500" Width="920"
         WindowStartupLocation="CenterScreen" Loaded="Window_Loaded">
     
     <Grid Margin="15">
@@ -33,6 +33,7 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="Auto"/> <!-- CỘT GIỮA: ĐO ĐỘ NGUY HIỂM -->
                 <ColumnDefinition Width="1.4*"/>
             </Grid.ColumnDefinitions>
 
@@ -69,8 +70,61 @@
                 </Border>
             </Grid>
 
-            <!-- CỤM 3: CAMERA & NÚT ĐIỀU KHIỂN -->
-            <Border Grid.Column="1" Background="#FFF3E5F5" BorderBrush="#FFCE93D8" BorderThickness="1" CornerRadius="8" Padding="8">
+            <!-- ================= CỤM MỚI: CÂY ĐO ĐỘ NGUY HIỂM (Ở GIỮA) ================= -->
+            <Border Grid.Column="1" Margin="0,0,10,0" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="10" Width="85">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="⚠️ NGUY HIỂM" FontSize="10" FontWeight="Bold" Foreground="#D32F2F" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+                    <!-- THANH ĐO PHÂN MỨC 0 - 10 -->
+                    <Grid Grid.Row="1" HorizontalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="24"/>
+                            <ColumnDefinition Width="28"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- CỘT MÀU 3 PHÂN ĐOẠN -->
+                        <Border Grid.Column="0" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="3*"/> <!-- Đoạn 7 đến 10 (Màu Đỏ) -->
+                                    <RowDefinition Height="3*"/> <!-- Đoạn 4 đến 7 (Màu Vàng Nhạt) -->
+                                    <RowDefinition Height="4*"/> <!-- Đoạn 0 đến 4 (Màu Xanh Nước) -->
+                                </Grid.RowDefinitions>
+
+                                <Rectangle Grid.Row="0" Fill="#E53935" ToolTip="Mức 7 - 10: Nguy hiểm cao"/>
+                                <Rectangle Grid.Row="1" Fill="#FFF176" ToolTip="Mức 4 - 7: Cảnh báo"/>
+                                <Rectangle Grid.Row="2" Fill="#29B6F6" ToolTip="Mức 0 - 4: An toàn"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- VẠCH VÀ SỐ MỐC -->
+                        <Grid Grid.Column="1" Margin="4,0,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="3*"/>
+                                <RowDefinition Height="3*"/>
+                                <RowDefinition Height="4*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="10" FontSize="10" FontWeight="Bold" Foreground="#E53935" VerticalAlignment="Top" Margin="0,-5,0,0"/>
+                            <TextBlock Grid.Row="0" Text="- 7" FontSize="10" FontWeight="Bold" Foreground="#F57F17" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
+                            <TextBlock Grid.Row="1" Text="- 4" FontSize="10" FontWeight="Bold" Foreground="#0288D1" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
+                            <TextBlock Grid.Row="2" Text="- 0" FontSize="10" FontWeight="Bold" Foreground="#616161" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
+                        </Grid>
+                    </Grid>
+
+                    <!-- HIỂN THỊ GIÁ TRỊ MỨC NGUY HIỂM -->
+                    <TextBlock Grid.Row="2" x:Name="txtDangerLevel" Text="0/10" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- ================= CỤM 3: CAMERA & NÚT ĐIỀU KHIỂN ================= -->
+            <Border Grid.Column="2" Background="#FFF3E5F5" BorderBrush="#FFCE93D8" BorderThickness="1" CornerRadius="8" Padding="8">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -91,8 +145,6 @@
                                 Background="#FF7E57C2" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
                         <Button x:Name="btnToggleOverlay" Content="Hiển thị Thước &amp; Vạch Mực Nước" Height="26" Margin="0,0,0,4"
                                 Background="#FF0288D1" Foreground="White" FontWeight="Bold" Click="btnToggleOverlay_Click"/>
-                        
-                        <!-- NÚT CHỤP MÀN HÌNH BỔ SUNG -->
                         <Button x:Name="btnScreenshot" Content="📸 Chụp Màn Hình Camera" Height="26" 
                                 Background="#FFFB8C00" Foreground="White" FontWeight="Bold" Click="btnScreenshot_Click"/>
                     </StackPanel>
