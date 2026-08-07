@@ -36,7 +36,7 @@
                 <ColumnDefinition Width="1.4*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- ================= CỤM 2: THẺ THÔNG SỐ CẢM BIẾN (3 CARDS) ================= -->
+            <!-- ================= CỤM 2: THẺ THÔNG SỐ CẢM BIẾN (3 CARDS XANH LÁ) ================= -->
             <Grid Grid.Column="0" Margin="0,0,10,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*"/>
@@ -45,10 +45,10 @@
                 </Grid.RowDefinitions>
 
                 <!-- CARD 1: NHIỆT ĐỘ -->
-                <Border Grid.Row="0" Background="#FFE1F5FE" BorderBrush="#FF81D4FA" BorderThickness="1" CornerRadius="8" Margin="0,0,0,5" Padding="10">
+                <Border Grid.Row="0" Background="#FFE8F5E9" BorderBrush="#FFA5D6A7" BorderThickness="1" CornerRadius="8" Margin="0,0,0,5" Padding="10">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="🌡️ NHIỆT ĐỘ" FontSize="12" FontWeight="Bold" Foreground="#FF0288D1"/>
-                        <TextBlock x:Name="txtTemperature" Text="{Binding Temperature}" FontSize="26" FontWeight="Bold" Foreground="#FF01579B" Margin="0,4,0,0"/>
+                        <TextBlock Text="🌡️ NHIỆT ĐỘ" FontSize="12" FontWeight="Bold" Foreground="#FF388E3C"/>
+                        <TextBlock x:Name="txtTemperature" Text="{Binding Temperature}" FontSize="26" FontWeight="Bold" Foreground="#FF1B5E20" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
@@ -61,10 +61,10 @@
                 </Border>
 
                 <!-- CARD 3: MỰC NƯỚC THỰC TẾ -->
-                <Border Grid.Row="2" Background="#FFFDE0DC" BorderBrush="#FFEF9A9A" BorderThickness="1" CornerRadius="8" Margin="0,5,0,0" Padding="10">
+                <Border Grid.Row="2" Background="#FFE8F5E9" BorderBrush="#FFA5D6A7" BorderThickness="1" CornerRadius="8" Margin="0,5,0,0" Padding="10">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="🌊 MỰC NƯỚC THỰC TẾ" FontSize="12" FontWeight="Bold" Foreground="#FFC62828"/>
-                        <TextBlock x:Name="txtWaterLevel" Text="{Binding WaterLevel}" FontSize="26" FontWeight="Bold" Foreground="#FFB71C1C" Margin="0,4,0,0"/>
+                        <TextBlock Text="🌊 MỰC NƯỚC THỰC TẾ" FontSize="12" FontWeight="Bold" Foreground="#FF388E3C"/>
+                        <TextBlock x:Name="txtWaterLevel" Text="{Binding WaterLevel}" FontSize="26" FontWeight="Bold" Foreground="#FF1B5E20" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
             </Grid>
