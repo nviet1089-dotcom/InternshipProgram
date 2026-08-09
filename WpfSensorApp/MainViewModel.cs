@@ -9,6 +9,7 @@ namespace WpfSensorApp
         private string _temperature = "--.-- °C";
         private string _humidity = "--.-- %";
         private string _waterLevel = "--.-- cm";
+        private string _dangerLevel = "0/10";
         private string _statusText = "Trạng thái: Sẵn sàng kết nối";
         private Brush _statusColor = Brushes.Gray;
 
@@ -28,6 +29,12 @@ namespace WpfSensorApp
         {
             get => _waterLevel;
             set { _waterLevel = value; OnPropertyChanged(); }
+        }
+
+        public string DangerLevel
+        {
+            get => _dangerLevel;
+            set { _dangerLevel = value; OnPropertyChanged(); }
         }
 
         public string StatusText

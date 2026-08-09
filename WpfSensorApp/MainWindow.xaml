@@ -70,7 +70,7 @@
                 </Border>
             </Grid>
 
-            <!-- ================= CỤM MỚI: CÂY ĐO ĐỘ NGUY HIỂM (Ở GIỮA) ================= -->
+            <!-- ================= CỤM CÂY ĐO ĐỘ NGUY HIỂM (ĐÃ ĐIỀU CHỈNH 0-4, 4-8, 8-10) ================= -->
             <Border Grid.Column="1" Margin="0,0,10,0" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="10" Width="85">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -92,13 +92,13 @@
                         <Border Grid.Column="0" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1">
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="3*"/> <!-- Đoạn 7 đến 10 (Màu Đỏ) -->
-                                    <RowDefinition Height="3*"/> <!-- Đoạn 4 đến 7 (Màu Vàng Nhạt) -->
+                                    <RowDefinition Height="2*"/> <!-- Đoạn 8 đến 10 (Màu Đỏ) -->
+                                    <RowDefinition Height="4*"/> <!-- Đoạn 4 đến 8 (Màu Vàng Nhạt) -->
                                     <RowDefinition Height="4*"/> <!-- Đoạn 0 đến 4 (Màu Xanh Nước) -->
                                 </Grid.RowDefinitions>
 
-                                <Rectangle Grid.Row="0" Fill="#E53935" ToolTip="Mức 7 - 10: Nguy hiểm cao"/>
-                                <Rectangle Grid.Row="1" Fill="#FFF176" ToolTip="Mức 4 - 7: Cảnh báo"/>
+                                <Rectangle Grid.Row="0" Fill="#E53935" ToolTip="Mức 8 - 10: Nguy hiểm cao"/>
+                                <Rectangle Grid.Row="1" Fill="#FFF176" ToolTip="Mức 4 - 8: Cảnh báo"/>
                                 <Rectangle Grid.Row="2" Fill="#29B6F6" ToolTip="Mức 0 - 4: An toàn"/>
                             </Grid>
                         </Border>
@@ -106,20 +106,20 @@
                         <!-- VẠCH VÀ SỐ MỐC -->
                         <Grid Grid.Column="1" Margin="4,0,0,0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="3*"/>
-                                <RowDefinition Height="3*"/>
+                                <RowDefinition Height="2*"/>
+                                <RowDefinition Height="4*"/>
                                 <RowDefinition Height="4*"/>
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Text="10" FontSize="10" FontWeight="Bold" Foreground="#E53935" VerticalAlignment="Top" Margin="0,-5,0,0"/>
-                            <TextBlock Grid.Row="0" Text="- 7" FontSize="10" FontWeight="Bold" Foreground="#F57F17" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
+                            <TextBlock Grid.Row="0" Text="- 8" FontSize="10" FontWeight="Bold" Foreground="#F57F17" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
                             <TextBlock Grid.Row="1" Text="- 4" FontSize="10" FontWeight="Bold" Foreground="#0288D1" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
                             <TextBlock Grid.Row="2" Text="- 0" FontSize="10" FontWeight="Bold" Foreground="#616161" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
                         </Grid>
                     </Grid>
 
                     <!-- HIỂN THỊ GIÁ TRỊ MỨC NGUY HIỂM -->
-                    <TextBlock Grid.Row="2" x:Name="txtDangerLevel" Text="0/10" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <TextBlock Grid.Row="2" x:Name="txtDangerLevel" Text="{Binding DangerLevel}" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center" Margin="0,8,0,0"/>
                 </Grid>
             </Border>
 

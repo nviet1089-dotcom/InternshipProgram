@@ -32,14 +32,11 @@ namespace WpfSensorApp
 
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
-        // BỔ SUNG: Khai báo ViewModel
         public MainViewModel ViewModel { get; set; } = new MainViewModel();
 
         public MainWindow()
         {
             InitializeComponent();
-
-            // BỔ SUNG: Gán DataContext cho Window để XAML Binding được dữ liệu
             this.DataContext = ViewModel;
 
             _serialPort = new SerialPort();
@@ -83,6 +80,45 @@ namespace WpfSensorApp
             btnToggleOverlay.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(_showOverlay ? "#FFE53935" : "#FF0288D1");
         }
 
+        private void btnScreenshot_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (imgWebcam.Source is BitmapImage bitmapImage)
+                {
+                    string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
+                    if (!Directory.Exists(folderPath))
+                    {
+                        Directory.CreateDirectory(folderPath);
+                    }
+
+                    string fileName = $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
+                    string filePath = Path.Combine(folderPath, fileName);
+
+                    PngBitmapEncoder encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
+
+                    using (FileStream stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        encoder.Save(stream);
+                    }
+
+                    MessageBox.Show($"Đã lưu ảnh chụp màn hình thành công tại:\n{filePath}", 
+                                    "Chụp Màn Hình", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    MessageBox.Show("Không có hình ảnh từ Camera để chụp!", 
+                                    "Thông Báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi chụp màn hình: {ex.Message}", 
+                                "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ProcessFrame(object sender, EventArgs e)
         {
             if (_capture != null && _capture.Ptr != IntPtr.Zero)
@@ -100,10 +136,14 @@ namespace WpfSensorApp
 
                         double waterHeightCm = ProcessContainerAndWaterLevel(processedFrame);
 
+                        double dangerRatio = waterHeightCm / MAX_WATER_HEIGHT_CM;
+                        double dangerLevel = Math.Min(10.0, Math.Max(0.0, dangerRatio * 10.0));
+
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            // BỔ SUNG: Cập nhật mực nước qua ViewModel
                             ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
+                            // Cập nhật mức nguy hiểm qua ViewModel
+                            ViewModel.DangerLevel = $"{dangerLevel:F1}/10";
                         }));
 
                         using (Bitmap bitmap = processedFrame.ToBitmap())
@@ -236,7 +276,6 @@ namespace WpfSensorApp
             if (cboComPorts.Items.Count > 0) cboComPorts.SelectedIndex = 0;
             else 
             {
-                // BỔ SUNG: Cập nhật Trạng thái qua ViewModel
                 ViewModel.StatusText = "Trạng thái: Không tìm thấy cổng COM!";
                 ViewModel.StatusColor = MediaBrushes.Red;
             }
@@ -258,7 +297,6 @@ namespace WpfSensorApp
                 cboComPorts.IsEnabled = false;
                 btnRefresh.IsEnabled = false;
 
-                // BỔ SUNG: Cập nhật Trạng thái qua ViewModel
                 ViewModel.StatusText = $"Trạng thái: Đã kết nối tới {_serialPort.PortName}";
                 ViewModel.StatusColor = MediaBrushes.Green;
             }
@@ -278,7 +316,6 @@ namespace WpfSensorApp
                 cboComPorts.IsEnabled = true;
                 btnRefresh.IsEnabled = true;
 
-                // BỔ SUNG: Cập nhật Trạng thái qua ViewModel
                 ViewModel.StatusText = "Trạng thái: Đã ngắt kết nối";
                 ViewModel.StatusColor = MediaBrushes.Gray;
             }
@@ -313,7 +350,6 @@ namespace WpfSensorApp
                     string tempStr = parts[0].Replace("T:", "").Trim();
                     string humStr = parts[1].Replace("H:", "").Trim();
 
-                    // BỔ SUNG: Cập nhật Nhiệt độ & Độ ẩm qua ViewModel
                     ViewModel.Temperature = $"{tempStr} °C";
                     ViewModel.Humidity = $"{humStr} %";
                 }
