@@ -1,10 +1,13 @@
-﻿#nullable disable
+﻿
+#nullable disable
 using System;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -28,7 +31,9 @@ namespace WpfSensorApp
         private bool _showOverlay = false;
 
         private double _smoothedWaterY = -1;
+        private double _lastDetectedWaterY = -1;
         private Rectangle _smoothedContainer = Rectangle.Empty;
+        private int _frameCounter = 0;
 
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
@@ -67,16 +72,16 @@ namespace WpfSensorApp
         private void btnToggleGrayscale_Click(object sender, RoutedEventArgs e)
         {
             _isGrayscale = !_isGrayscale;
-            btnToggleGrayscale.Content = _isGrayscale ? "Hiện màu nguyên bản" : "Khử màu (Trắng/Đen)";
+            btnToggleGrayscale.Content = "Gray";
             btnToggleGrayscale.Background = _isGrayscale 
-                ? MediaBrushes.DarkGray 
-                : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF7E57C2");
+                ? MediaBrushes.DimGray 
+                : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF757575");
         }
 
         private void btnToggleOverlay_Click(object sender, RoutedEventArgs e)
         {
             _showOverlay = !_showOverlay;
-            btnToggleOverlay.Content = _showOverlay ? "Ẩn Thước & Vạch Mực Nước" : "Hiển thị Thước & Vạch Mực Nước";
+            btnToggleOverlay.Content = _showOverlay ? "Ẩn Vạch Mực Nước" : "Hiển thị Vạch Mực Nước";
             btnToggleOverlay.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(_showOverlay ? "#FFE53935" : "#FF0288D1");
         }
 
@@ -84,7 +89,7 @@ namespace WpfSensorApp
         {
             try
             {
-                if (imgWebcam.Source is BitmapImage bitmapImage)
+                if (imgWebcam.Source is BitmapSource bitmapSource)
                 {
                     string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
                     if (!Directory.Exists(folderPath))
@@ -96,15 +101,14 @@ namespace WpfSensorApp
                     string filePath = Path.Combine(folderPath, fileName);
 
                     PngBitmapEncoder encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(bitmapImage));
+                    encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
 
                     using (FileStream stream = new FileStream(filePath, FileMode.Create))
                     {
                         encoder.Save(stream);
                     }
 
-                    MessageBox.Show($"Đã lưu ảnh chụp màn hình thành công tại:\n{filePath}", 
-                                    "Chụp Màn Hình", MessageBoxButton.OK, MessageBoxImage.Information);
+                    ShowImagePreviewWindow(bitmapSource, filePath);
                 }
                 else
                 {
@@ -117,6 +121,29 @@ namespace WpfSensorApp
                 MessageBox.Show($"Lỗi khi chụp màn hình: {ex.Message}", 
                                 "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void ShowImagePreviewWindow(BitmapSource imageSource, string filePath)
+        {
+            Window previewWindow = new Window
+            {
+                Title = $"Xem Ảnh Chụp - {Path.GetFileName(filePath)}",
+                Width = 680,
+                Height = 520,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                Background = MediaBrushes.Black
+            };
+
+            System.Windows.Controls.Image imgControl = new System.Windows.Controls.Image
+            {
+                Source = imageSource,
+                Stretch = System.Windows.Media.Stretch.Uniform,
+                Margin = new Thickness(10)
+            };
+
+            previewWindow.Content = imgControl;
+            previewWindow.Show();
         }
 
         private void ProcessFrame(object sender, EventArgs e)
@@ -142,7 +169,6 @@ namespace WpfSensorApp
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
                             ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
-                            // Cập nhật mức nguy hiểm qua ViewModel
                             ViewModel.DangerLevel = $"{dangerLevel:F1}/10";
                         }));
 
@@ -161,6 +187,8 @@ namespace WpfSensorApp
 
         private double ProcessContainerAndWaterLevel(Mat image)
         {
+            _frameCounter++;
+
             using (Mat gray = new Mat())
             using (Mat blurred = new Mat())
             using (Mat edges = new Mat())
@@ -199,50 +227,64 @@ namespace WpfSensorApp
                     return 0.0;
                 }
 
+                // Làm mịn khung chứa bình nước (Container)
                 if (_smoothedContainer.IsEmpty)
                 {
                     _smoothedContainer = currentContainer;
                 }
                 else
                 {
-                    _smoothedContainer.X = (int)(_smoothedContainer.X * 0.85 + currentContainer.X * 0.15);
-                    _smoothedContainer.Y = (int)(_smoothedContainer.Y * 0.85 + currentContainer.Y * 0.15);
-                    _smoothedContainer.Width = (int)(_smoothedContainer.Width * 0.85 + currentContainer.Width * 0.15);
-                    _smoothedContainer.Height = (int)(_smoothedContainer.Height * 0.85 + currentContainer.Height * 0.15);
+                    _smoothedContainer.X = (int)(_smoothedContainer.X * 0.92 + currentContainer.X * 0.08);
+                    _smoothedContainer.Y = (int)(_smoothedContainer.Y * 0.92 + currentContainer.Y * 0.08);
+                    _smoothedContainer.Width = (int)(_smoothedContainer.Width * 0.92 + currentContainer.Width * 0.08);
+                    _smoothedContainer.Height = (int)(_smoothedContainer.Height * 0.92 + currentContainer.Height * 0.08);
                 }
 
-                LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
                 double currentWaterY = _smoothedContainer.Bottom;
 
-                foreach (var line in lines)
+                // Chỉ chạy thuật toán tìm đường Hough lines mỗi 2 khung hình (giảm xuống ~15 FPS cho phần đo đạc)
+                if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
                 {
-                    if (line.P1.X >= _smoothedContainer.Left - 10 && line.P2.X <= _smoothedContainer.Right + 10 &&
-                        Math.Abs(line.P1.Y - line.P2.Y) < 12)
+                    LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
+
+                    foreach (var line in lines)
                     {
-                        double lineY = (line.P1.Y + line.P2.Y) / 2.0;
-                        if (lineY > _smoothedContainer.Top && lineY < _smoothedContainer.Bottom)
+                        if (line.P1.X >= _smoothedContainer.Left - 10 && line.P2.X <= _smoothedContainer.Right + 10 &&
+                            Math.Abs(line.P1.Y - line.P2.Y) < 12)
                         {
-                            currentWaterY = lineY;
-                            break;
+                            double lineY = (line.P1.Y + line.P2.Y) / 2.0;
+                            if (lineY > _smoothedContainer.Top && lineY < _smoothedContainer.Bottom)
+                            {
+                                currentWaterY = lineY;
+                                break;
+                            }
                         }
                     }
+                    _lastDetectedWaterY = currentWaterY;
+                }
+                else
+                {
+                    currentWaterY = _lastDetectedWaterY;
                 }
 
+                // Cập nhật vị trí vạch đỏ theo mô hình Low-pass Filter & Deadband chống rung
                 if (_smoothedWaterY < 0)
                 {
                     _smoothedWaterY = currentWaterY;
                 }
                 else
                 {
-                    _smoothedWaterY = _smoothedWaterY * 0.80 + currentWaterY * 0.20;
+                    // Ngưỡng Deadband: Bỏ qua dao động nhỏ dưới 2.5px
+                    if (Math.Abs(currentWaterY - _smoothedWaterY) > 2.5)
+                    {
+                        // Hệ số 0.04 giúp vạch đỏ trượt cực kỳ mượt mà
+                        _smoothedWaterY = _smoothedWaterY * 0.96 + currentWaterY * 0.04;
+                    }
                 }
 
                 if (_showOverlay)
                 {
-                    CvInvoke.Line(image, new Point(_smoothedContainer.Left, _smoothedContainer.Top), new Point(_smoothedContainer.Left, _smoothedContainer.Bottom), new MCvScalar(255, 255, 0), 2);
-                    CvInvoke.Line(image, new Point(_smoothedContainer.Right, _smoothedContainer.Top), new Point(_smoothedContainer.Right, _smoothedContainer.Bottom), new MCvScalar(255, 255, 0), 2);
-
-                    CvInvoke.Line(image, new Point(_smoothedContainer.Left, (int)_smoothedWaterY), new Point(_smoothedContainer.Right, (int)_smoothedWaterY), new MCvScalar(0, 0, 255), 3);
+                    CvInvoke.Line(image, new Point(0, (int)_smoothedWaterY), new Point(image.Width, (int)_smoothedWaterY), new MCvScalar(0, 0, 255), 3);
                 }
 
                 double waterHeightCm = ((_smoothedContainer.Bottom - _smoothedWaterY) / _smoothedContainer.Height) * MAX_WATER_HEIGHT_CM;
@@ -359,8 +401,7 @@ namespace WpfSensorApp
         protected override void OnClosed(EventArgs e)
         {
             if (_capture != null) { _capture.Stop(); _capture.Dispose(); }
-            if (_serialPort != null && _serialPort.IsOpen) { _serialPort.Close(); _serialPort.Dispose(); }
-            base.OnClosed(e);
+            if (_serialPort != null && _serialPort.IsOpen) { _serialPort.Close(); _serialPort.Dispose(); } base.OnClosed(e);
         }
     }
 }
