@@ -1,5 +1,4 @@
-﻿
-#nullable disable
+﻿#nullable disable
 using System;
 using System.Drawing;
 using System.Globalization;
@@ -204,6 +203,7 @@ namespace WpfSensorApp
                 {
                     CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
+                    // 1. TỰ ĐỘNG LỰA CHỌN VẬT THỂ LỚN NHẤT (GẦN CAMERA NHẤT)
                     for (int i = 0; i < contours.Size; i++)
                     {
                         Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
@@ -227,7 +227,7 @@ namespace WpfSensorApp
                     return 0.0;
                 }
 
-                // Làm mịn khung chứa bình nước (Container)
+                // Làm mịn vị trí chủ thể (Low-pass Filter)
                 if (_smoothedContainer.IsEmpty)
                 {
                     _smoothedContainer = currentContainer;
@@ -240,9 +240,24 @@ namespace WpfSensorApp
                     _smoothedContainer.Height = (int)(_smoothedContainer.Height * 0.92 + currentContainer.Height * 0.08);
                 }
 
+                // 2. GIỮ LẠI CHỦ THỂ CHÍNH VÀ CHUYỂN TOÀN BỘ NỀN XUNG QUANH THÀNH MÀU TRẮNG
+                using (Mat whiteBg = new Mat(image.Size, DepthType.Cv8U, 3))
+                using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
+                {
+                    whiteBg.SetTo(new MCvScalar(255, 255, 255)); // Đã sửa SetValue -> SetTo
+                    mask.SetTo(new MCvScalar(0));                // Mặt nạ mặc định che hết
+
+                    // Tạo vùng chọn cho chủ thể gần nhất
+                    CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
+
+                    // Đè chủ thể lên nền trắng
+                    image.CopyTo(whiteBg, mask);
+                    whiteBg.CopyTo(image);
+                }
+
+                // 3. ĐO MỰC NƯỚC (GIẢM TẦN SUẤT XỬ LÝ XUỐNG ~15 FPS ĐỂ GIẢM NHIỄU)
                 double currentWaterY = _smoothedContainer.Bottom;
 
-                // Chỉ chạy thuật toán tìm đường Hough lines mỗi 2 khung hình (giảm xuống ~15 FPS cho phần đo đạc)
                 if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
                 {
                     LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
@@ -267,24 +282,30 @@ namespace WpfSensorApp
                     currentWaterY = _lastDetectedWaterY;
                 }
 
-                // Cập nhật vị trí vạch đỏ theo mô hình Low-pass Filter & Deadband chống rung
+                // 4. LÀM MƯỢT CHUYỂN ĐỘNG VẠCH ĐỎ (DEADBAND & LOW-PASS FILTER)
                 if (_smoothedWaterY < 0)
                 {
                     _smoothedWaterY = currentWaterY;
                 }
                 else
                 {
-                    // Ngưỡng Deadband: Bỏ qua dao động nhỏ dưới 2.5px
                     if (Math.Abs(currentWaterY - _smoothedWaterY) > 2.5)
                     {
-                        // Hệ số 0.04 giúp vạch đỏ trượt cực kỳ mượt mà
                         _smoothedWaterY = _smoothedWaterY * 0.96 + currentWaterY * 0.04;
                     }
                 }
 
+                // 5. HIỂN THỊ VẠCH ĐO NƯỚC NẰM GỌN TRONG CHỦ THỂ
                 if (_showOverlay)
                 {
-                    CvInvoke.Line(image, new Point(0, (int)_smoothedWaterY), new Point(image.Width, (int)_smoothedWaterY), new MCvScalar(0, 0, 255), 3);
+                    // Vạch màu đỏ ngang lòng bình nước
+                    CvInvoke.Line(image, 
+                        new Point(_smoothedContainer.Left, (int)_smoothedWaterY), 
+                        new Point(_smoothedContainer.Right, (int)_smoothedWaterY), 
+                        new MCvScalar(0, 0, 255), 3);
+
+                    // Khung viền xanh lá khóa vị trí chủ thể
+                    CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 200, 0), 2);
                 }
 
                 double waterHeightCm = ((_smoothedContainer.Bottom - _smoothedWaterY) / _smoothedContainer.Height) * MAX_WATER_HEIGHT_CM;
