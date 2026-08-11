@@ -24,10 +24,10 @@ namespace WpfSensorApp
     {
         private SerialPort _serialPort;
         private VideoCapture _capture;
-        private Mat _frame;
 
         private bool _isGrayscale = false;
         private bool _showOverlay = false;
+        private bool _isBackgroundActive = false;
 
         private double _smoothedWaterY = -1;
         private double _lastDetectedWaterY = -1;
@@ -35,6 +35,9 @@ namespace WpfSensorApp
         private int _frameCounter = 0;
 
         private const double MAX_WATER_HEIGHT_CM = 20.0;
+
+        private readonly System.Windows.Media.Brush _colorGreen = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF4CAF50");
+        private readonly System.Windows.Media.Brush _colorRed = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FFE53935");
 
         public MainViewModel ViewModel { get; set; } = new MainViewModel();
 
@@ -45,7 +48,6 @@ namespace WpfSensorApp
 
             _serialPort = new SerialPort();
             _serialPort.DataReceived += SerialPort_DataReceived;
-            _frame = new Mat();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -58,9 +60,17 @@ namespace WpfSensorApp
         {
             try
             {
-                _capture = new VideoCapture(0);
-                _capture.ImageGrabbed += ProcessFrame;
-                _capture.Start();
+                _capture = new VideoCapture(0, VideoCapture.API.Any);
+                if (_capture.IsOpened)
+                {
+                    _capture.ImageGrabbed += ProcessFrame;
+                    _capture.Start();
+                }
+                else
+                {
+                    ViewModel.StatusText = "Trạng thái: Không mở được Webcam (Index 0)";
+                    ViewModel.StatusColor = MediaBrushes.Red;
+                }
             }
             catch (Exception ex)
             {
@@ -71,17 +81,20 @@ namespace WpfSensorApp
         private void btnToggleGrayscale_Click(object sender, RoutedEventArgs e)
         {
             _isGrayscale = !_isGrayscale;
-            btnToggleGrayscale.Content = "Gray";
-            btnToggleGrayscale.Background = _isGrayscale 
-                ? MediaBrushes.DimGray 
-                : (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF757575");
+            btnToggleGrayscale.Background = _isGrayscale ? _colorRed : _colorGreen;
+        }
+
+        private void btnToggleBackground_Click(object sender, RoutedEventArgs e)
+        {
+            _isBackgroundActive = !_isBackgroundActive;
+            btnToggleBackground.Background = _isBackgroundActive ? _colorRed : _colorGreen;
         }
 
         private void btnToggleOverlay_Click(object sender, RoutedEventArgs e)
         {
             _showOverlay = !_showOverlay;
             btnToggleOverlay.Content = _showOverlay ? "Ẩn Vạch Mực Nước" : "Hiển thị Vạch Mực Nước";
-            btnToggleOverlay.Background = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom(_showOverlay ? "#FFE53935" : "#FF0288D1");
+            btnToggleOverlay.Background = _showOverlay ? _colorRed : _colorGreen;
         }
 
         private void btnScreenshot_Click(object sender, RoutedEventArgs e)
@@ -147,38 +160,47 @@ namespace WpfSensorApp
 
         private void ProcessFrame(object sender, EventArgs e)
         {
-            if (_capture != null && _capture.Ptr != IntPtr.Zero)
+            if (_capture == null || !_capture.IsOpened) return;
+
+            using (Mat localFrame = new Mat())
             {
-                _capture.Retrieve(_frame);
-                if (!_frame.IsEmpty)
+                _capture.Retrieve(localFrame);
+                if (localFrame.IsEmpty) return;
+
+                using (Mat processedFrame = localFrame.Clone())
                 {
-                    using (Mat processedFrame = _frame.Clone())
+                    if (_isGrayscale)
                     {
-                        if (_isGrayscale)
+                        CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
+                        CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Gray2Bgr);
+                    }
+
+                    double dangerLevel = ProcessContainerAndWaterLevel(processedFrame);
+
+                    double dangerRatio = dangerLevel / 10.0;
+                    double waterHeightCm = dangerRatio * MAX_WATER_HEIGHT_CM;
+
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
+                        ViewModel.DangerLevel = $"{dangerLevel:F1}/10";
+
+                        // Cập nhật độ cao màn che để hiển thị mực nước dâng trên thanh Nguy Hiểm
+                        double totalBarHeight = gridBarContainer.ActualHeight;
+                        if (totalBarHeight > 0)
                         {
-                            CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
-                            CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Gray2Bgr);
+                            double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, dangerRatio));
+                            rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
                         }
+                    }));
 
-                        double waterHeightCm = ProcessContainerAndWaterLevel(processedFrame);
-
-                        double dangerRatio = waterHeightCm / MAX_WATER_HEIGHT_CM;
-                        double dangerLevel = Math.Min(10.0, Math.Max(0.0, dangerRatio * 10.0));
-
+                    using (Bitmap bitmap = processedFrame.ToBitmap())
+                    {
+                        BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
                         Dispatcher.BeginInvoke(new Action(() =>
                         {
-                            ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
-                            ViewModel.DangerLevel = $"{dangerLevel:F1}/10";
+                            imgWebcam.Source = bitmapImage;
                         }));
-
-                        using (Bitmap bitmap = processedFrame.ToBitmap())
-                        {
-                            BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
-                            Dispatcher.BeginInvoke(new Action(() =>
-                            {
-                                imgWebcam.Source = bitmapImage;
-                            }));
-                        }
                     }
                 }
             }
@@ -203,13 +225,13 @@ namespace WpfSensorApp
                 {
                     CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-                    // 1. TỰ ĐỘNG LỰA CHỌN VẬT THỂ LỚN NHẤT (GẦN CAMERA NHẤT)
+                    // 1. CHỌN CHỦ THỂ ĐỨNG LỚN NHẤT (BÌNH NƯỚC GẦN CAMERA NHẤT)
                     for (int i = 0; i < contours.Size; i++)
                     {
                         Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
                         double area = rect.Width * rect.Height;
 
-                        if (rect.Height > 80 && rect.Width > 40 && rect.Height > rect.Width && area > maxArea)
+                        if (rect.Height > 60 && rect.Width > 30 && rect.Height > rect.Width && area > maxArea)
                         {
                             maxArea = area;
                             currentContainer = rect;
@@ -217,7 +239,7 @@ namespace WpfSensorApp
                     }
                 }
 
-                if (currentContainer.IsEmpty)
+                if (currentContainer.IsEmpty && _smoothedContainer.IsEmpty)
                 {
                     if (_showOverlay)
                     {
@@ -227,35 +249,42 @@ namespace WpfSensorApp
                     return 0.0;
                 }
 
-                // Làm mịn vị trí chủ thể (Low-pass Filter)
-                if (_smoothedContainer.IsEmpty)
+                // Cập nhật vị trí chủ thể với hệ số làm mượt Low-pass
+                if (!currentContainer.IsEmpty)
                 {
-                    _smoothedContainer = currentContainer;
-                }
-                else
-                {
-                    _smoothedContainer.X = (int)(_smoothedContainer.X * 0.92 + currentContainer.X * 0.08);
-                    _smoothedContainer.Y = (int)(_smoothedContainer.Y * 0.92 + currentContainer.Y * 0.08);
-                    _smoothedContainer.Width = (int)(_smoothedContainer.Width * 0.92 + currentContainer.Width * 0.08);
-                    _smoothedContainer.Height = (int)(_smoothedContainer.Height * 0.92 + currentContainer.Height * 0.08);
-                }
-
-                // 2. GIỮ LẠI CHỦ THỂ CHÍNH VÀ CHUYỂN TOÀN BỘ NỀN XUNG QUANH THÀNH MÀU TRẮNG
-                using (Mat whiteBg = new Mat(image.Size, DepthType.Cv8U, 3))
-                using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
-                {
-                    whiteBg.SetTo(new MCvScalar(255, 255, 255)); // Đã sửa SetValue -> SetTo
-                    mask.SetTo(new MCvScalar(0));                // Mặt nạ mặc định che hết
-
-                    // Tạo vùng chọn cho chủ thể gần nhất
-                    CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
-
-                    // Đè chủ thể lên nền trắng
-                    image.CopyTo(whiteBg, mask);
-                    whiteBg.CopyTo(image);
+                    if (_smoothedContainer.IsEmpty)
+                    {
+                        _smoothedContainer = currentContainer;
+                    }
+                    else
+                    {
+                        _smoothedContainer.X = (int)(_smoothedContainer.X * 0.85 + currentContainer.X * 0.15);
+                        _smoothedContainer.Y = (int)(_smoothedContainer.Y * 0.85 + currentContainer.Y * 0.15);
+                        _smoothedContainer.Width = (int)(_smoothedContainer.Width * 0.85 + currentContainer.Width * 0.15);
+                        _smoothedContainer.Height = (int)(_smoothedContainer.Height * 0.85 + currentContainer.Height * 0.15);
+                    }
                 }
 
-                // 3. ĐO MỰC NƯỚC (GIẢM TẦN SUẤT XỬ LÝ XUỐNG ~15 FPS ĐỂ GIẢM NHIỄU)
+                // Giới hạn tọa độ trong lòng ảnh để tránh lỗi vượt biên
+                _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
+
+                // 2. NẾU NÚT BACKGROUND ĐƯỢC BẤM: TỰ ĐỘNG XÓA TRẮNG TOÀN BỘ NỀN XUNG QUANH CHỦ THỂ
+                if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
+                {
+                    using (Mat whiteBg = new Mat(image.Size, DepthType.Cv8U, 3))
+                    using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
+                    {
+                        whiteBg.SetTo(new MCvScalar(255, 255, 255));
+                        mask.SetTo(new MCvScalar(0));
+
+                        CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
+
+                        image.CopyTo(whiteBg, mask);
+                        whiteBg.CopyTo(image);
+                    }
+                }
+
+                // 3. ĐO MỰC NƯỚC THEO TỈ LỆ CỦA BÌNH NƯỚC
                 double currentWaterY = _smoothedContainer.Bottom;
 
                 if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
@@ -282,35 +311,45 @@ namespace WpfSensorApp
                     currentWaterY = _lastDetectedWaterY;
                 }
 
-                // 4. LÀM MƯỢT CHUYỂN ĐỘNG VẠCH ĐỎ (DEADBAND & LOW-PASS FILTER)
+                // 4. LÀM MƯỢT VỊ TRÍ VẠCH NƯỚC
                 if (_smoothedWaterY < 0)
                 {
                     _smoothedWaterY = currentWaterY;
                 }
                 else
                 {
-                    if (Math.Abs(currentWaterY - _smoothedWaterY) > 2.5)
+                    if (Math.Abs(currentWaterY - _smoothedWaterY) > 2.0)
                     {
-                        _smoothedWaterY = _smoothedWaterY * 0.96 + currentWaterY * 0.04;
+                        _smoothedWaterY = _smoothedWaterY * 0.92 + currentWaterY * 0.08;
                     }
                 }
 
-                // 5. HIỂN THỊ VẠCH ĐO NƯỚC NẰM GỌN TRONG CHỦ THỂ
-                if (_showOverlay)
+                _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
+
+                // 5. HIỂN THỊ OVERLAY
+                if (_showOverlay && !_smoothedContainer.IsEmpty)
                 {
-                    // Vạch màu đỏ ngang lòng bình nước
+                    CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
                     CvInvoke.Line(image, 
                         new Point(_smoothedContainer.Left, (int)_smoothedWaterY), 
                         new Point(_smoothedContainer.Right, (int)_smoothedWaterY), 
                         new MCvScalar(0, 0, 255), 3);
-
-                    // Khung viền xanh lá khóa vị trí chủ thể
-                    CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 200, 0), 2);
                 }
 
-                double waterHeightCm = ((_smoothedContainer.Bottom - _smoothedWaterY) / _smoothedContainer.Height) * MAX_WATER_HEIGHT_CM;
-                return Math.Max(0.0, waterHeightCm);
+                // Tính tỉ lệ mực nước tương ứng 10 phần bằng nhau của bình
+                double waterPixels = _smoothedContainer.Bottom - _smoothedWaterY;
+                double dangerLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
+                return Math.Min(10.0, Math.Max(0.0, dangerLevel));
             }
+        }
+
+        private Rectangle ClampRectangle(Rectangle rect, Size imageSize)
+        {
+            int x = Math.Max(0, Math.Min(rect.X, imageSize.Width - 1));
+            int y = Math.Max(0, Math.Min(rect.Y, imageSize.Height - 1));
+            int width = Math.Max(1, Math.Min(rect.Width, imageSize.Width - x));
+            int height = Math.Max(1, Math.Min(rect.Height, imageSize.Height - y));
+            return new Rectangle(x, y, width, height);
         }
 
         private BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
@@ -421,8 +460,17 @@ namespace WpfSensorApp
 
         protected override void OnClosed(EventArgs e)
         {
-            if (_capture != null) { _capture.Stop(); _capture.Dispose(); }
-            if (_serialPort != null && _serialPort.IsOpen) { _serialPort.Close(); _serialPort.Dispose(); } base.OnClosed(e);
+            if (_capture != null) 
+            { 
+                _capture.Stop(); 
+                _capture.Dispose(); 
+            }
+            if (_serialPort != null && _serialPort.IsOpen) 
+            { 
+                _serialPort.Close(); 
+                _serialPort.Dispose(); 
+            } 
+            base.OnClosed(e);
         }
     }
 }

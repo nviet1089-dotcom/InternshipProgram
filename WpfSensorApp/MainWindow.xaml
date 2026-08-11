@@ -67,7 +67,7 @@
                 </Border>
             </Grid>
 
-            <!-- CÂY ĐO ĐỘ NGUY HIỂM -->
+            <!-- CÂY ĐO ĐỘ NGUY HIỂM ĐỘNG -->
             <Border Grid.Column="1" Margin="0,0,10,0" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="8" Padding="10" Width="85">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -84,17 +84,24 @@
                             <ColumnDefinition Width="28"/>
                         </Grid.ColumnDefinitions>
 
-                        <Border Grid.Column="0" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="2*"/>
-                                    <RowDefinition Height="4*"/>
-                                    <RowDefinition Height="4*"/>
-                                </Grid.RowDefinitions>
+                        <!-- Khung chứa thanh màu -->
+                        <Border Grid.Column="0" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1" Background="#FAFAFA">
+                            <Grid x:Name="gridBarContainer">
+                                <!-- Layer 1: Thanh 3 dải màu cố định -->
+                                <Grid VerticalAlignment="Stretch">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="2*"/>
+                                        <RowDefinition Height="4*"/>
+                                        <RowDefinition Height="4*"/>
+                                    </Grid.RowDefinitions>
 
-                                <Rectangle Grid.Row="0" Fill="#E53935" ToolTip="Mức 8 - 10: Nguy hiểm cao"/>
-                                <Rectangle Grid.Row="1" Fill="#FFF176" ToolTip="Mức 4 - 8: Cảnh báo"/>
-                                <Rectangle Grid.Row="2" Fill="#29B6F6" ToolTip="Mức 0 - 4: An toàn"/>
+                                    <Rectangle Grid.Row="0" Fill="#E53935" ToolTip="Mức 8 - 10: Nguy hiểm cao"/>
+                                    <Rectangle Grid.Row="1" Fill="#FFF176" ToolTip="Mức 4 - 8: Cảnh báo"/>
+                                    <Rectangle Grid.Row="2" Fill="#29B6F6" ToolTip="Mức 0 - 4: An toàn"/>
+                                </Grid>
+
+                                <!-- Layer 2: Màn che màu xám/trắng phía trên -->
+                                <Rectangle x:Name="rectUnfilledOverlay" Fill="#FAFAFA" VerticalAlignment="Top" Height="0"/>
                             </Grid>
                         </Border>
 
@@ -135,12 +142,17 @@
                         <Button x:Name="btnScreenshot" Content="📸" Width="28" Height="28" HorizontalAlignment="Right" Margin="0,0,0,4"
                                 Background="#FF4CAF50" Foreground="White" FontSize="14" FontWeight="Bold" ToolTip="Chụp Màn Hình Camera" Click="btnScreenshot_Click"/>
                         
-                        <!-- Nút Gray màu xám -->
+                        <!-- Nút Gray -->
                         <Button x:Name="btnToggleGrayscale" Content="Gray" Height="26" Margin="0,0,0,4" 
-                                Background="#FF757575" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
+                                Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
                         
+                        <!-- Nút Background -->
+                        <Button x:Name="btnToggleBackground" Content="Background" Height="26" Margin="0,0,0,4" 
+                                Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleBackground_Click"/>
+
+                        <!-- Nút Vạch Mực Nước -->
                         <Button x:Name="btnToggleOverlay" Content="Hiển thị Vạch Mực Nước" Height="26"
-                                Background="#FF0288D1" Foreground="White" FontWeight="Bold" Click="btnToggleOverlay_Click"/>
+                                Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleOverlay_Click"/>
                     </StackPanel>
                 </Grid>
             </Border>

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WpfSensorApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7bd2f00c30a55e43b80b7cbe75a30a91d41b935a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+402470d80ce0b3443f9e21d0476fabcfa7d9f932")]
 [assembly: System.Reflection.AssemblyProductAttribute("WpfSensorApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WpfSensorApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
