@@ -33,7 +33,7 @@ namespace WpfSensorApp
         private double _lastDetectedWaterY = -1;
         private Rectangle _smoothedContainer = Rectangle.Empty;
 
-        // Các biến số thực phục vụ làm mượt khung nhận diện
+        // Các biến số thực phục vụ làm mượt và khóa khung nhận diện
         private double _smoothedX = -1;
         private double _smoothedY = -1;
         private double _smoothedW = -1;
@@ -242,34 +242,31 @@ namespace WpfSensorApp
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
-                        // Hiển thị giá trị dạng Scale thang đo 0 - 10
                         ViewModel.DangerLevel = $"Scale: {scaleLevel:F1} / 10";
 
                         BrushConverter bc = new BrushConverter();
                         
-                        // Màu sắc thay đổi theo giá trị Scale
                         if (scaleLevel >= 8.0)
                         {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935"); // Đỏ (Mức cao)
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935");
                             ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E0F0F") : (Brush)bc.ConvertFrom("#FFFFEBEE");
                         }
                         else if (scaleLevel >= 5.0)
                         {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17"); // Cam (Mức trung bình cao)
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17");
                             ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E2E04") : (Brush)bc.ConvertFrom("#FFFDE0B2");
                         }
                         else if (scaleLevel >= 2.5)
                         {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50"); // Xanh lá (Mức tiêu chuẩn)
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50");
                             ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F3E18") : (Brush)bc.ConvertFrom("#FFE8F5E9");
                         }
                         else
                         {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1"); // Xanh dương (Mức thấp)
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
                             ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
                         }
 
-                        // Cập nhật chiều cao hiển thị của thanh Scale trong giao diện
                         if (gridBarContainer != null && rectUnfilledOverlay != null)
                         {
                             double totalBarHeight = gridBarContainer.ActualHeight;
@@ -294,147 +291,153 @@ namespace WpfSensorApp
             _frameCounter++;
 
             using (Mat gray = new Mat())
-            using (Mat blurred = new Mat())
-            using (Mat edges = new Mat())
             {
                 CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
-                CvInvoke.GaussianBlur(gray, blurred, new Size(5, 5), 0);
-                CvInvoke.Canny(blurred, edges, 50, 150);
+                CvInvoke.GaussianBlur(gray, gray, new Size(5, 5), 0);
 
-                Rectangle currentContainer = Rectangle.Empty;
-                double maxArea = 0;
-
-                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                using (Mat edges = new Mat())
                 {
-                    CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                    CvInvoke.Canny(gray, edges, 35, 110);
 
-                    for (int i = 0; i < contours.Size; i++)
+                    Rectangle currentContainer = Rectangle.Empty;
+                    double maxArea = 0;
+
+                    // Ngưỡng diện tích linh hoạt theo độ phân giải ảnh (bắt được cả vật thể nhỏ lẫn to)
+                    double minAreaThreshold = image.Width * image.Height * 0.008; 
+
+                    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                     {
-                        Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
-                        double area = rect.Width * rect.Height;
+                        CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-                        if (rect.Height > 60 && rect.Width > 30 && rect.Height > rect.Width && area > maxArea)
+                        for (int i = 0; i < contours.Size; i++)
                         {
-                            maxArea = area;
-                            currentContainer = rect;
-                        }
-                    }
-                }
+                            Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
+                            double area = rect.Width * rect.Height;
 
-                if (currentContainer.IsEmpty && _smoothedContainer.IsEmpty)
-                {
-                    if (_showOverlay)
-                    {
-                        CvInvoke.PutText(image, "Khong tim thay binh nuoc...", new Point(20, 40),
-                            FontFace.HersheySimplex, 0.6, new MCvScalar(0, 165, 255), 2);
-                    }
-                    return 0.0;
-                }
+                            // Loại bỏ các contour dính mép ảnh (nhiễu góc camera)
+                            if (rect.X <= 2 || rect.Y <= 2 || rect.Right >= image.Width - 2 || rect.Bottom >= image.Height - 2)
+                                continue;
 
-                if (!currentContainer.IsEmpty)
-                {
-                    if (_smoothedW < 0)
-                    {
-                        _smoothedX = currentContainer.X;
-                        _smoothedY = currentContainer.Y;
-                        _smoothedW = currentContainer.Width;
-                        _smoothedH = currentContainer.Height;
-                    }
-                    else
-                    {
-                        double currentAspect = (double)currentContainer.Width / currentContainer.Height;
-                        double smoothedAspect = _smoothedW / _smoothedH;
-
-                        if (Math.Abs(currentAspect - smoothedAspect) < 0.3)
-                        {
-                            double alpha = 0.06;
-
-                            if (Math.Abs(currentContainer.X - _smoothedX) > 2)
-                                _smoothedX = _smoothedX * (1.0 - alpha) + currentContainer.X * alpha;
-
-                            if (Math.Abs(currentContainer.Y - _smoothedY) > 2)
-                                _smoothedY = _smoothedY * (1.0 - alpha) + currentContainer.Y * alpha;
-
-                            if (Math.Abs(currentContainer.Width - _smoothedW) > 2)
-                                _smoothedW = _smoothedW * (1.0 - alpha) + currentContainer.Width * alpha;
-
-                            if (Math.Abs(currentContainer.Height - _smoothedH) > 2)
-                                _smoothedH = _smoothedH * (1.0 - alpha) + currentContainer.Height * alpha;
-                        }
-                    }
-
-                    _smoothedContainer = new Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
-                }
-
-                _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
-
-                if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
-                {
-                    using (Mat whiteBg = new Mat(image.Size, DepthType.Cv8U, 3))
-                    using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
-                    {
-                        whiteBg.SetTo(new MCvScalar(255, 255, 255));
-                        mask.SetTo(new MCvScalar(0));
-
-                        CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
-
-                        image.CopyTo(whiteBg, mask);
-                        whiteBg.CopyTo(image);
-                    }
-                }
-
-                double currentWaterY = _smoothedContainer.Bottom;
-
-                if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
-                {
-                    LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
-
-                    foreach (var line in lines)
-                    {
-                        if (line.P1.X >= _smoothedContainer.Left - 10 && line.P2.X <= _smoothedContainer.Right + 10 &&
-                            Math.Abs(line.P1.Y - line.P2.Y) < 12)
-                        {
-                            double lineY = (line.P1.Y + line.P2.Y) / 2.0;
-                            if (lineY > _smoothedContainer.Top && lineY < _smoothedContainer.Bottom)
+                            // Tự động nhận diện chủ thể lớn nhất vượt ngưỡng
+                            if (area > minAreaThreshold && area > maxArea)
                             {
-                                currentWaterY = lineY;
-                                break;
+                                maxArea = area;
+                                currentContainer = rect;
                             }
                         }
                     }
-                    _lastDetectedWaterY = currentWaterY;
-                }
-                else
-                {
-                    currentWaterY = _lastDetectedWaterY;
-                }
 
-                if (_smoothedWaterY < 0)
-                {
-                    _smoothedWaterY = currentWaterY;
-                }
-                else
-                {
-                    if (Math.Abs(currentWaterY - _smoothedWaterY) > 2.0)
+                    // TỰ ĐỘNG LÀM MƯỢT VÀ KHÓA KHUNG (LOCKING / DEADZONE MECHANISM)
+                    if (!currentContainer.IsEmpty)
                     {
-                        _smoothedWaterY = _smoothedWaterY * 0.92 + currentWaterY * 0.08;
+                        if (_smoothedW < 0)
+                        {
+                            _smoothedX = currentContainer.X;
+                            _smoothedY = currentContainer.Y;
+                            _smoothedW = currentContainer.Width;
+                            _smoothedH = currentContainer.Height;
+                        }
+                        else
+                        {
+                            double deltaX = Math.Abs(currentContainer.X - _smoothedX);
+                            double deltaY = Math.Abs(currentContainer.Y - _smoothedY);
+                            double deltaW = Math.Abs(currentContainer.Width - _smoothedW);
+                            double deltaH = Math.Abs(currentContainer.Height - _smoothedH);
+
+                            // VÙNG DUNG SAI (DEADZONE): Nếu độ thay đổi nhỏ (do rung tay/nhiễu ánh sáng) -> KHÓA GIỮ NGUYÊN
+                            bool isStationary = (deltaX < 12 && deltaY < 12 && deltaW < 15 && deltaH < 15);
+
+                            if (!isStationary)
+                            {
+                                // Khi dịch chuyển rõ rệt: Tự điều chỉnh tốc độ bám theo (di chuyển nhanh -> bám nhanh)
+                                double totalDelta = deltaX + deltaY + deltaW + deltaH;
+                                double alpha = totalDelta > 80 ? 0.22 : 0.08;
+
+                                _smoothedX = _smoothedX * (1.0 - alpha) + currentContainer.X * alpha;
+                                _smoothedY = _smoothedY * (1.0 - alpha) + currentContainer.Y * alpha;
+                                _smoothedW = _smoothedW * (1.0 - alpha) + currentContainer.Width * alpha;
+                                _smoothedH = _smoothedH * (1.0 - alpha) + currentContainer.Height * alpha;
+                            }
+                            // Nếu isStationary == true -> Giữ nguyên tọa độ cũ 100%, ô xanh hoàn toàn đứng yên!
+                        }
+
+                        _smoothedContainer = new Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
                     }
+
+                    _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
+
+                    // Xử lý làm mờ nền (Bokeh) xung quanh vật thể được chọn
+                    if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
+                    {
+                        using (Mat blurredBg = new Mat())
+                        using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
+                        {
+                            CvInvoke.GaussianBlur(image, blurredBg, new Size(45, 45), 0);
+                            mask.SetTo(new MCvScalar(0));
+                            CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
+
+                            image.CopyTo(blurredBg, mask);
+                            blurredBg.CopyTo(image);
+                        }
+                    }
+
+                    if (_smoothedContainer.IsEmpty) return 0.0;
+
+                    // Xử lý vạch mực nước trong container
+                    double currentWaterY = _smoothedContainer.Bottom;
+
+                    if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
+                    {
+                        LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
+
+                        foreach (var line in lines)
+                        {
+                            if (line.P1.X >= _smoothedContainer.Left - 10 && line.P2.X <= _smoothedContainer.Right + 10 &&
+                                Math.Abs(line.P1.Y - line.P2.Y) < 12)
+                            {
+                                double lineY = (line.P1.Y + line.P2.Y) / 2.0;
+                                if (lineY > _smoothedContainer.Top && lineY < _smoothedContainer.Bottom)
+                                {
+                                    currentWaterY = lineY;
+                                    break;
+                                }
+                            }
+                        }
+                        _lastDetectedWaterY = currentWaterY;
+                    }
+                    else
+                    {
+                        currentWaterY = _lastDetectedWaterY;
+                    }
+
+                    if (_smoothedWaterY < 0)
+                    {
+                        _smoothedWaterY = currentWaterY;
+                    }
+                    else
+                    {
+                        // Giảm rung cho vạch mực nước
+                        if (Math.Abs(currentWaterY - _smoothedWaterY) > 3.0)
+                        {
+                            _smoothedWaterY = _smoothedWaterY * 0.88 + currentWaterY * 0.12;
+                        }
+                    }
+
+                    _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
+
+                    if (_showOverlay && !_smoothedContainer.IsEmpty)
+                    {
+                        CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
+                        CvInvoke.Line(image, 
+                            new Point(0, (int)_smoothedWaterY), 
+                            new Point(image.Width - 1, (int)_smoothedWaterY), 
+                            new MCvScalar(0, 0, 255), 3);
+                    }
+
+                    double waterPixels = _smoothedContainer.Bottom - _smoothedWaterY;
+                    double scaleLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
+                    return Math.Min(10.0, Math.Max(0.0, scaleLevel));
                 }
-
-                _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
-
-                if (_showOverlay && !_smoothedContainer.IsEmpty)
-                {
-                    CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
-                    CvInvoke.Line(image, 
-                        new Point(0, (int)_smoothedWaterY), 
-                        new Point(image.Width - 1, (int)_smoothedWaterY), 
-                        new MCvScalar(0, 0, 255), 3);
-                }
-
-                double waterPixels = _smoothedContainer.Bottom - _smoothedWaterY;
-                double scaleLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
-                return Math.Min(10.0, Math.Max(0.0, scaleLevel));
             }
         }
 
