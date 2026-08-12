@@ -12,6 +12,10 @@ namespace WpfSensorApp
         private string _dangerLevel = "0/10";
         private string _statusText = "Trạng thái: Sẵn sàng kết nối";
         private Brush _statusColor = Brushes.Gray;
+        
+        // Khai báo thêm thuộc tính màu cho thẻ Mực nước
+        private Brush _waterLevelColor = (Brush)new BrushConverter().ConvertFrom("#FF0288D1");
+        private Brush _waterLevelBgColor = (Brush)new BrushConverter().ConvertFrom("#FFE1F5FE");
 
         public string Temperature
         {
@@ -47,6 +51,18 @@ namespace WpfSensorApp
         {
             get => _statusColor;
             set { _statusColor = value; OnPropertyChanged(); }
+        }
+
+        public Brush WaterLevelColor
+        {
+            get => _waterLevelColor;
+            set { _waterLevelColor = value; OnPropertyChanged(); }
+        }
+
+        public Brush WaterLevelBgColor
+        {
+            get => _waterLevelBgColor;
+            set { _waterLevelBgColor = value; OnPropertyChanged(); }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

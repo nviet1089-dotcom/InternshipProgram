@@ -27,13 +27,20 @@ namespace WpfSensorApp
         private bool _isGrayscale = false;
         private bool _showOverlay = false;
         private bool _isBackgroundActive = false;
+        private bool _isDarkMode = false;
 
         private double _smoothedWaterY = -1;
         private double _lastDetectedWaterY = -1;
         private Rectangle _smoothedContainer = Rectangle.Empty;
+
+        // Các biến số thực phục vụ làm mượt khung nhận diện
+        private double _smoothedX = -1;
+        private double _smoothedY = -1;
+        private double _smoothedW = -1;
+        private double _smoothedH = -1;
+
         private int _frameCounter = 0;
 
-        // Chiều cao chuẩn tối đa của bình nước (cm)
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
         private readonly System.Windows.Media.Brush _colorGreen = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF4CAF50");
@@ -95,6 +102,54 @@ namespace WpfSensorApp
             _showOverlay = !_showOverlay;
             btnToggleOverlay.Content = _showOverlay ? "Ẩn Vạch Mực Nước" : "Hiển thị Vạch Mực Nước";
             btnToggleOverlay.Background = _showOverlay ? _colorRed : _colorGreen;
+        }
+
+        private void toggleDarkMode_Click(object sender, RoutedEventArgs e)
+        {
+            _isDarkMode = toggleDarkMode.IsChecked ?? false;
+            ApplyTheme(_isDarkMode);
+        }
+
+        private void ApplyTheme(bool isDark)
+        {
+            BrushConverter bc = new BrushConverter();
+
+            if (isDark)
+            {
+                this.Background = (Brush)bc.ConvertFrom("#121212");
+                grpSerial.Foreground = MediaBrushes.White;
+                lblComPort.Foreground = MediaBrushes.White;
+                lblDarkMode.Foreground = MediaBrushes.White;
+
+                cardTemp.Background = (Brush)bc.ConvertFrom("#1E2A1E");
+                cardHum.Background = (Brush)bc.ConvertFrom("#1E2A1E");
+                cardDanger.Background = (Brush)bc.ConvertFrom("#1E1E1E");
+                cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#333333");
+                cardCamera.Background = (Brush)bc.ConvertFrom("#251A2C");
+                cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#4A154B");
+
+                rectUnfilledOverlay.Fill = (Brush)bc.ConvertFrom("#1E1E1E");
+                txtDangerLevel.Foreground = MediaBrushes.White;
+                sbStatus.Background = (Brush)bc.ConvertFrom("#1E1E1E");
+            }
+            else
+            {
+                this.Background = MediaBrushes.White;
+                grpSerial.Foreground = (Brush)bc.ConvertFrom("#333333");
+                lblComPort.Foreground = (Brush)bc.ConvertFrom("#333333");
+                lblDarkMode.Foreground = (Brush)bc.ConvertFrom("#333333");
+
+                cardTemp.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardHum.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardDanger.Background = (Brush)bc.ConvertFrom("#FAFAFA");
+                cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#E0E0E0");
+                cardCamera.Background = (Brush)bc.ConvertFrom("#FFF3E5F5");
+                cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#FFCE93D8");
+
+                rectUnfilledOverlay.Fill = (Brush)bc.ConvertFrom("#FAFAFA");
+                txtDangerLevel.Foreground = (Brush)bc.ConvertFrom("#333333");
+                sbStatus.Background = (Brush)bc.ConvertFrom("#FFF5F5F5");
+            }
         }
 
         private void btnScreenshot_Click(object sender, RoutedEventArgs e)
@@ -178,21 +233,43 @@ namespace WpfSensorApp
                         }
                     }
 
-                    // TÍNH TOÁN VÀ ĐO MỰC NƯỚC TỪ VẠCH ĐỎ
                     double scaleLevel = ProcessContainerAndWaterLevel(processedFrame);
-
                     double scaleRatio = scaleLevel / 10.0;
                     double waterHeightCm = scaleRatio * MAX_WATER_HEIGHT_CM;
 
-                    // Mã hóa ảnh sang BitmapImage an toàn trên luồng nền
                     BitmapImage bitmapImage = ConvertMatToBitmapImage(processedFrame);
 
-                    // Cập nhật giao diện UI trên UI Thread
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
-                        ViewModel.DangerLevel = $"{scaleLevel:F1}/10";
+                        // Hiển thị giá trị dạng Scale thang đo 0 - 10
+                        ViewModel.DangerLevel = $"Scale: {scaleLevel:F1} / 10";
 
+                        BrushConverter bc = new BrushConverter();
+                        
+                        // Màu sắc thay đổi theo giá trị Scale
+                        if (scaleLevel >= 8.0)
+                        {
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935"); // Đỏ (Mức cao)
+                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E0F0F") : (Brush)bc.ConvertFrom("#FFFFEBEE");
+                        }
+                        else if (scaleLevel >= 5.0)
+                        {
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17"); // Cam (Mức trung bình cao)
+                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E2E04") : (Brush)bc.ConvertFrom("#FFFDE0B2");
+                        }
+                        else if (scaleLevel >= 2.5)
+                        {
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50"); // Xanh lá (Mức tiêu chuẩn)
+                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F3E18") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+                        }
+                        else
+                        {
+                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1"); // Xanh dương (Mức thấp)
+                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
+                        }
+
+                        // Cập nhật chiều cao hiển thị của thanh Scale trong giao diện
                         if (gridBarContainer != null && rectUnfilledOverlay != null)
                         {
                             double totalBarHeight = gridBarContainer.ActualHeight;
@@ -256,17 +333,37 @@ namespace WpfSensorApp
 
                 if (!currentContainer.IsEmpty)
                 {
-                    if (_smoothedContainer.IsEmpty)
+                    if (_smoothedW < 0)
                     {
-                        _smoothedContainer = currentContainer;
+                        _smoothedX = currentContainer.X;
+                        _smoothedY = currentContainer.Y;
+                        _smoothedW = currentContainer.Width;
+                        _smoothedH = currentContainer.Height;
                     }
                     else
                     {
-                        _smoothedContainer.X = (int)(_smoothedContainer.X * 0.85 + currentContainer.X * 0.15);
-                        _smoothedContainer.Y = (int)(_smoothedContainer.Y * 0.85 + currentContainer.Y * 0.15);
-                        _smoothedContainer.Width = (int)(_smoothedContainer.Width * 0.85 + currentContainer.Width * 0.15);
-                        _smoothedContainer.Height = (int)(_smoothedContainer.Height * 0.85 + currentContainer.Height * 0.15);
+                        double currentAspect = (double)currentContainer.Width / currentContainer.Height;
+                        double smoothedAspect = _smoothedW / _smoothedH;
+
+                        if (Math.Abs(currentAspect - smoothedAspect) < 0.3)
+                        {
+                            double alpha = 0.06;
+
+                            if (Math.Abs(currentContainer.X - _smoothedX) > 2)
+                                _smoothedX = _smoothedX * (1.0 - alpha) + currentContainer.X * alpha;
+
+                            if (Math.Abs(currentContainer.Y - _smoothedY) > 2)
+                                _smoothedY = _smoothedY * (1.0 - alpha) + currentContainer.Y * alpha;
+
+                            if (Math.Abs(currentContainer.Width - _smoothedW) > 2)
+                                _smoothedW = _smoothedW * (1.0 - alpha) + currentContainer.Width * alpha;
+
+                            if (Math.Abs(currentContainer.Height - _smoothedH) > 2)
+                                _smoothedH = _smoothedH * (1.0 - alpha) + currentContainer.Height * alpha;
+                        }
                     }
+
+                    _smoothedContainer = new Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
                 }
 
                 _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
@@ -328,10 +425,7 @@ namespace WpfSensorApp
 
                 if (_showOverlay && !_smoothedContainer.IsEmpty)
                 {
-                    // Khung xanh nhãn nhận diện bình
                     CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
-
-                    // Vạch ngang đỏ đo mực nước chạy từ mép trái sang mép phải màn hình
                     CvInvoke.Line(image, 
                         new Point(0, (int)_smoothedWaterY), 
                         new Point(image.Width - 1, (int)_smoothedWaterY), 
@@ -353,7 +447,6 @@ namespace WpfSensorApp
             return new Rectangle(x, y, width, height);
         }
 
-        // Chuyển đổi trực tiếp Mat sang BitmapImage thông qua bộ nhớ đệm
         private BitmapImage ConvertMatToBitmapImage(Mat mat)
         {
             using (VectorOfByte buffer = new VectorOfByte())
