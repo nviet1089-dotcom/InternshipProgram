@@ -1,7 +1,5 @@
 ﻿#nullable disable
 using System;
-using System.Drawing;
-using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Windows;
@@ -13,6 +11,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using MediaBrushes = System.Windows.Media.Brushes;
+using Path = System.IO.Path;
 
 using Point = System.Drawing.Point;
 using Size = System.Drawing.Size;
@@ -34,6 +33,7 @@ namespace WpfSensorApp
         private Rectangle _smoothedContainer = Rectangle.Empty;
         private int _frameCounter = 0;
 
+        // Chiều cao chuẩn tối đa của bình nước (cm)
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
         private readonly System.Windows.Media.Brush _colorGreen = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF4CAF50");
@@ -171,37 +171,43 @@ namespace WpfSensorApp
                 {
                     if (_isGrayscale)
                     {
-                        CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Bgr2Gray);
-                        CvInvoke.CvtColor(processedFrame, processedFrame, ColorConversion.Gray2Bgr);
+                        using (Mat grayMat = new Mat())
+                        {
+                            CvInvoke.CvtColor(processedFrame, grayMat, ColorConversion.Bgr2Gray);
+                            CvInvoke.CvtColor(grayMat, processedFrame, ColorConversion.Gray2Bgr);
+                        }
                     }
 
-                    double dangerLevel = ProcessContainerAndWaterLevel(processedFrame);
+                    // TÍNH TOÁN VÀ ĐO MỰC NƯỚC TỪ VẠCH ĐỎ
+                    double scaleLevel = ProcessContainerAndWaterLevel(processedFrame);
 
-                    double dangerRatio = dangerLevel / 10.0;
-                    double waterHeightCm = dangerRatio * MAX_WATER_HEIGHT_CM;
+                    double scaleRatio = scaleLevel / 10.0;
+                    double waterHeightCm = scaleRatio * MAX_WATER_HEIGHT_CM;
 
+                    // Mã hóa ảnh sang BitmapImage an toàn trên luồng nền
+                    BitmapImage bitmapImage = ConvertMatToBitmapImage(processedFrame);
+
+                    // Cập nhật giao diện UI trên UI Thread
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
                         ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
-                        ViewModel.DangerLevel = $"{dangerLevel:F1}/10";
+                        ViewModel.DangerLevel = $"{scaleLevel:F1}/10";
 
-                        // Cập nhật độ cao màn che để hiển thị mực nước dâng trên thanh Nguy Hiểm
-                        double totalBarHeight = gridBarContainer.ActualHeight;
-                        if (totalBarHeight > 0)
+                        if (gridBarContainer != null && rectUnfilledOverlay != null)
                         {
-                            double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, dangerRatio));
-                            rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
+                            double totalBarHeight = gridBarContainer.ActualHeight;
+                            if (totalBarHeight > 0)
+                            {
+                                double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, scaleRatio));
+                                rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
+                            }
                         }
-                    }));
 
-                    using (Bitmap bitmap = processedFrame.ToBitmap())
-                    {
-                        BitmapImage bitmapImage = ConvertBitmapToBitmapImage(bitmap);
-                        Dispatcher.BeginInvoke(new Action(() =>
+                        if (imgWebcam != null)
                         {
                             imgWebcam.Source = bitmapImage;
-                        }));
-                    }
+                        }
+                    }));
                 }
             }
         }
@@ -225,7 +231,6 @@ namespace WpfSensorApp
                 {
                     CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-                    // 1. CHỌN CHỦ THỂ ĐỨNG LỚN NHẤT (BÌNH NƯỚC GẦN CAMERA NHẤT)
                     for (int i = 0; i < contours.Size; i++)
                     {
                         Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
@@ -249,7 +254,6 @@ namespace WpfSensorApp
                     return 0.0;
                 }
 
-                // Cập nhật vị trí chủ thể với hệ số làm mượt Low-pass
                 if (!currentContainer.IsEmpty)
                 {
                     if (_smoothedContainer.IsEmpty)
@@ -265,10 +269,8 @@ namespace WpfSensorApp
                     }
                 }
 
-                // Giới hạn tọa độ trong lòng ảnh để tránh lỗi vượt biên
                 _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
 
-                // 2. NẾU NÚT BACKGROUND ĐƯỢC BẤM: TỰ ĐỘNG XÓA TRẮNG TOÀN BỘ NỀN XUNG QUANH CHỦ THỂ
                 if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
                 {
                     using (Mat whiteBg = new Mat(image.Size, DepthType.Cv8U, 3))
@@ -284,7 +286,6 @@ namespace WpfSensorApp
                     }
                 }
 
-                // 3. ĐO MỰC NƯỚC THEO TỈ LỆ CỦA BÌNH NƯỚC
                 double currentWaterY = _smoothedContainer.Bottom;
 
                 if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
@@ -311,7 +312,6 @@ namespace WpfSensorApp
                     currentWaterY = _lastDetectedWaterY;
                 }
 
-                // 4. LÀM MƯỢT VỊ TRÍ VẠCH NƯỚC
                 if (_smoothedWaterY < 0)
                 {
                     _smoothedWaterY = currentWaterY;
@@ -326,20 +326,21 @@ namespace WpfSensorApp
 
                 _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
 
-                // 5. HIỂN THỊ OVERLAY
                 if (_showOverlay && !_smoothedContainer.IsEmpty)
                 {
+                    // Khung xanh nhãn nhận diện bình
                     CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
+
+                    // Vạch ngang đỏ đo mực nước chạy từ mép trái sang mép phải màn hình
                     CvInvoke.Line(image, 
-                        new Point(_smoothedContainer.Left, (int)_smoothedWaterY), 
-                        new Point(_smoothedContainer.Right, (int)_smoothedWaterY), 
+                        new Point(0, (int)_smoothedWaterY), 
+                        new Point(image.Width - 1, (int)_smoothedWaterY), 
                         new MCvScalar(0, 0, 255), 3);
                 }
 
-                // Tính tỉ lệ mực nước tương ứng 10 phần bằng nhau của bình
                 double waterPixels = _smoothedContainer.Bottom - _smoothedWaterY;
-                double dangerLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
-                return Math.Min(10.0, Math.Max(0.0, dangerLevel));
+                double scaleLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
+                return Math.Min(10.0, Math.Max(0.0, scaleLevel));
             }
         }
 
@@ -352,21 +353,22 @@ namespace WpfSensorApp
             return new Rectangle(x, y, width, height);
         }
 
-        private BitmapImage ConvertBitmapToBitmapImage(Bitmap bitmap)
+        // Chuyển đổi trực tiếp Mat sang BitmapImage thông qua bộ nhớ đệm
+        private BitmapImage ConvertMatToBitmapImage(Mat mat)
         {
-            using (MemoryStream memory = new MemoryStream())
+            using (VectorOfByte buffer = new VectorOfByte())
             {
-                bitmap.Save(memory, System.Drawing.Imaging.ImageFormat.Bmp);
-                memory.Position = 0;
-
-                BitmapImage bitmapImage = new BitmapImage();
-                bitmapImage.BeginInit();
-                bitmapImage.StreamSource = memory;
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.EndInit();
-                bitmapImage.Freeze();
-
-                return bitmapImage;
+                CvInvoke.Imencode(".bmp", mat, buffer);
+                using (MemoryStream stream = new MemoryStream(buffer.ToArray()))
+                {
+                    BitmapImage bitmapImage = new BitmapImage();
+                    bitmapImage.BeginInit();
+                    bitmapImage.StreamSource = stream;
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.EndInit();
+                    bitmapImage.Freeze();
+                    return bitmapImage;
+                }
             }
         }
 
