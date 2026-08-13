@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading; // DispatcherTimer cho Day 27
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -40,8 +41,20 @@ namespace WpfSensorApp
         private double _smoothedH = -1;
 
         private int _frameCounter = 0;
-
         private const double MAX_WATER_HEIGHT_CM = 20.0;
+
+        // --- DAY 25 & 26: NGƯỠNG VÀ TRẠNG THÁI CẢNH BÁO ---
+        private double _tempThreshold = 35.0;
+        private double _waterThreshold = 8.0;
+        private double _currentTemp = 0.0;
+        private double _currentWaterScale = 0.0;
+
+        private bool _isTempAlarm = false;
+        private bool _isWaterAlarm = false;
+
+        // --- DAY 27: TIMER HIỆU ỨNG NHẤP NHÁY ---
+        private DispatcherTimer _blinkTimer;
+        private bool _isBlinkStateToggle = false;
 
         private readonly System.Windows.Media.Brush _colorGreen = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF4CAF50");
         private readonly System.Windows.Media.Brush _colorRed = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FFE53935");
@@ -55,12 +68,66 @@ namespace WpfSensorApp
 
             _serialPort = new SerialPort();
             _serialPort.DataReceived += SerialPort_DataReceived;
+
+            InitBlinkTimer();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             LoadComPorts();
             StartWebcam();
+        }
+
+        // --- DAY 27: KHỞI TẠO TIMER NHẤP NHÁY (400ms) ---
+        private void InitBlinkTimer()
+        {
+            _blinkTimer = new DispatcherTimer();
+            _blinkTimer.Interval = TimeSpan.FromMilliseconds(400);
+            _blinkTimer.Tick += BlinkTimer_Tick;
+            _blinkTimer.Start();
+        }
+
+        private void BlinkTimer_Tick(object sender, EventArgs e)
+        {
+            _isBlinkStateToggle = !_isBlinkStateToggle;
+            BrushConverter bc = new BrushConverter();
+
+            Brush redBrush = (Brush)bc.ConvertFrom("#FFE53935");
+            Brush whiteBrush = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
+
+            // 1. Nhấp nháy cảnh báo Nhiệt độ
+            if (_isTempAlarm)
+            {
+                cardTemp.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
+            }
+            else
+            {
+                cardTemp.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+            }
+
+            // 2. Nhấp nháy cảnh báo Mực nước
+            if (_isWaterAlarm)
+            {
+                cardDanger.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
+            }
+            else
+            {
+                cardDanger.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : (Brush)bc.ConvertFrom("#FAFAFA");
+            }
+        }
+
+        // --- DAY 25: LẤY DỮ LIỆU TỪ Ô NHẬP NGƯỠNG ---
+        private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (txtTempThreshold != null && double.TryParse(txtTempThreshold.Text, out double temp))
+            {
+                _tempThreshold = temp;
+            }
+
+            if (txtWaterThreshold != null && double.TryParse(txtWaterThreshold.Text, out double water))
+            {
+                _waterThreshold = water;
+            }
         }
 
         private void StartWebcam()
@@ -121,9 +188,11 @@ namespace WpfSensorApp
                 lblComPort.Foreground = MediaBrushes.White;
                 lblDarkMode.Foreground = MediaBrushes.White;
 
-                cardTemp.Background = (Brush)bc.ConvertFrom("#1E2A1E");
+                if (grpThresholds != null) grpThresholds.Foreground = MediaBrushes.White;
+                if (lblTempThreshold != null) lblTempThreshold.Foreground = MediaBrushes.White;
+                if (lblWaterThreshold != null) lblWaterThreshold.Foreground = MediaBrushes.White;
+
                 cardHum.Background = (Brush)bc.ConvertFrom("#1E2A1E");
-                cardDanger.Background = (Brush)bc.ConvertFrom("#1E1E1E");
                 cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#333333");
                 cardCamera.Background = (Brush)bc.ConvertFrom("#251A2C");
                 cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#4A154B");
@@ -139,9 +208,11 @@ namespace WpfSensorApp
                 lblComPort.Foreground = (Brush)bc.ConvertFrom("#333333");
                 lblDarkMode.Foreground = (Brush)bc.ConvertFrom("#333333");
 
-                cardTemp.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
+                if (grpThresholds != null) grpThresholds.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (lblTempThreshold != null) lblTempThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (lblWaterThreshold != null) lblWaterThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
+
                 cardHum.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
-                cardDanger.Background = (Brush)bc.ConvertFrom("#FAFAFA");
                 cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#E0E0E0");
                 cardCamera.Background = (Brush)bc.ConvertFrom("#FFF3E5F5");
                 cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#FFCE93D8");
@@ -234,6 +305,11 @@ namespace WpfSensorApp
                     }
 
                     double scaleLevel = ProcessContainerAndWaterLevel(processedFrame);
+                    _currentWaterScale = scaleLevel;
+
+                    // DAY 26: Logic so sánh liên tục ngưỡng mực nước
+                    _isWaterAlarm = _currentWaterScale >= _waterThreshold;
+
                     double scaleRatio = scaleLevel / 10.0;
                     double waterHeightCm = scaleRatio * MAX_WATER_HEIGHT_CM;
 
@@ -301,8 +377,6 @@ namespace WpfSensorApp
 
                     Rectangle currentContainer = Rectangle.Empty;
                     double maxArea = 0;
-
-                    // Ngưỡng diện tích linh hoạt theo độ phân giải ảnh (bắt được cả vật thể nhỏ lẫn to)
                     double minAreaThreshold = image.Width * image.Height * 0.008; 
 
                     using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
@@ -314,11 +388,9 @@ namespace WpfSensorApp
                             Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
                             double area = rect.Width * rect.Height;
 
-                            // Loại bỏ các contour dính mép ảnh (nhiễu góc camera)
                             if (rect.X <= 2 || rect.Y <= 2 || rect.Right >= image.Width - 2 || rect.Bottom >= image.Height - 2)
                                 continue;
 
-                            // Tự động nhận diện chủ thể lớn nhất vượt ngưỡng
                             if (area > minAreaThreshold && area > maxArea)
                             {
                                 maxArea = area;
@@ -327,7 +399,6 @@ namespace WpfSensorApp
                         }
                     }
 
-                    // TỰ ĐỘNG LÀM MƯỢT VÀ KHÓA KHUNG (LOCKING / DEADZONE MECHANISM)
                     if (!currentContainer.IsEmpty)
                     {
                         if (_smoothedW < 0)
@@ -344,12 +415,10 @@ namespace WpfSensorApp
                             double deltaW = Math.Abs(currentContainer.Width - _smoothedW);
                             double deltaH = Math.Abs(currentContainer.Height - _smoothedH);
 
-                            // VÙNG DUNG SAI (DEADZONE): Nếu độ thay đổi nhỏ (do rung tay/nhiễu ánh sáng) -> KHÓA GIỮ NGUYÊN
                             bool isStationary = (deltaX < 12 && deltaY < 12 && deltaW < 15 && deltaH < 15);
 
                             if (!isStationary)
                             {
-                                // Khi dịch chuyển rõ rệt: Tự điều chỉnh tốc độ bám theo (di chuyển nhanh -> bám nhanh)
                                 double totalDelta = deltaX + deltaY + deltaW + deltaH;
                                 double alpha = totalDelta > 80 ? 0.22 : 0.08;
 
@@ -358,7 +427,6 @@ namespace WpfSensorApp
                                 _smoothedW = _smoothedW * (1.0 - alpha) + currentContainer.Width * alpha;
                                 _smoothedH = _smoothedH * (1.0 - alpha) + currentContainer.Height * alpha;
                             }
-                            // Nếu isStationary == true -> Giữ nguyên tọa độ cũ 100%, ô xanh hoàn toàn đứng yên!
                         }
 
                         _smoothedContainer = new Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
@@ -366,7 +434,6 @@ namespace WpfSensorApp
 
                     _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
 
-                    // Xử lý làm mờ nền (Bokeh) xung quanh vật thể được chọn
                     if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
                     {
                         using (Mat blurredBg = new Mat())
@@ -383,7 +450,6 @@ namespace WpfSensorApp
 
                     if (_smoothedContainer.IsEmpty) return 0.0;
 
-                    // Xử lý vạch mực nước trong container
                     double currentWaterY = _smoothedContainer.Bottom;
 
                     if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
@@ -416,7 +482,6 @@ namespace WpfSensorApp
                     }
                     else
                     {
-                        // Giảm rung cho vạch mực nước
                         if (Math.Abs(currentWaterY - _smoothedWaterY) > 3.0)
                         {
                             _smoothedWaterY = _smoothedWaterY * 0.88 + currentWaterY * 0.12;
@@ -552,12 +617,20 @@ namespace WpfSensorApp
 
                     ViewModel.Temperature = $"{tempStr} °C";
                     ViewModel.Humidity = $"{humStr} %";
+
+                    // DAY 26: Logic so sánh liên tục ngưỡng nhiệt độ từ Serial
+                    if (double.TryParse(tempStr, out double parsedTemp))
+                    {
+                        _currentTemp = parsedTemp;
+                        _isTempAlarm = _currentTemp >= _tempThreshold;
+                    }
                 }
             }
         }
 
         protected override void OnClosed(EventArgs e)
         {
+            if (_blinkTimer != null) _blinkTimer.Stop();
             if (_capture != null) 
             { 
                 _capture.Stop(); 

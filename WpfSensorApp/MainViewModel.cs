@@ -13,7 +13,6 @@ namespace WpfSensorApp
         private string _statusText = "Trạng thái: Sẵn sàng kết nối";
         private Brush _statusColor = Brushes.Gray;
         
-        // Khai báo thêm thuộc tính màu cho thẻ Mực nước
         private Brush _waterLevelColor = (Brush)new BrushConverter().ConvertFrom("#FF0288D1");
         private Brush _waterLevelBgColor = (Brush)new BrushConverter().ConvertFrom("#FFE1F5FE");
 
