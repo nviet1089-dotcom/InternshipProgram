@@ -27,6 +27,7 @@ namespace WpfSensorApp
     {
         private SerialPort _serialPort;
         private VideoCapture _capture;
+        private SensorLogger _sensorLogger;
 
         private bool _isGrayscale = false;
         private bool _showOverlay = false;
@@ -71,6 +72,19 @@ namespace WpfSensorApp
             _serialPort.DataReceived += SerialPort_DataReceived;
 
             InitBlinkTimer();
+
+            // Khởi tạo Logger 5 phút lưu 1 lần
+            _sensorLogger = new SensorLogger(() => (
+                ViewModel.Temperature,
+                ViewModel.Humidity,
+                ViewModel.WaterLevel
+            ));
+            _sensorLogger.Start();
+        }
+
+        private void btnCheckLogger_Click(object sender, RoutedEventArgs e)
+        {
+            _sensorLogger?.OpenLogFile();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -529,7 +543,6 @@ namespace WpfSensorApp
             }
         }
 
-        // Chọn vật thể gần camera nhất & điều chỉnh khung vuông di chuyển cực kỳ chậm, chuẩn xác
         private double ProcessContainerAndWaterLevel(Mat image)
         {
             _frameCounter++;
@@ -547,7 +560,6 @@ namespace WpfSensorApp
                     double minDistanceToCamera = double.MaxValue;
                     double minAreaThreshold = image.Width * image.Height * 0.008; 
 
-                    // Điểm mốc đáy trung tâm camera (đại diện vị trí gần camera nhất)
                     Point cameraAnchor = new Point(image.Width / 2, image.Height);
 
                     using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
@@ -567,7 +579,6 @@ namespace WpfSensorApp
                                 Point rectBottomCenter = new Point(rect.X + rect.Width / 2, rect.Bottom);
                                 double dist = Math.Sqrt(Math.Pow(rectBottomCenter.X - cameraAnchor.X, 2) + Math.Pow(rectBottomCenter.Y - cameraAnchor.Y, 2));
 
-                                // Chọn vật thể ở vị trí gần nhất
                                 if (dist < minDistanceToCamera)
                                 {
                                     minDistanceToCamera = dist;
@@ -588,7 +599,6 @@ namespace WpfSensorApp
                         }
                         else
                         {
-                            // Tốc độ di chuyển và co giãn kích thước cực chậm giúp khung di chuyển siêu mượt
                             double alphaPos = 0.03;  
                             double alphaSize = 0.025; 
 
@@ -795,6 +805,7 @@ namespace WpfSensorApp
 
         protected override void OnClosed(EventArgs e)
         {
+            _sensorLogger?.Stop();
             if (_blinkTimer != null) _blinkTimer.Stop();
             if (_capture != null) 
             { 
