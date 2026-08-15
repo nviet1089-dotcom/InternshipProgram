@@ -1,3 +1,4 @@
+#nullable disable
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -21,7 +22,6 @@ namespace WpfSensorApp
 
             EnsureLogFileExists();
 
-            // Chạy định kỳ 5 phút (5 * 60 giây)
             _loggerTimer = new DispatcherTimer();
             _loggerTimer.Interval = TimeSpan.FromMinutes(5);
             _loggerTimer.Tick += LoggerTimer_Tick;
@@ -30,7 +30,7 @@ namespace WpfSensorApp
         public void Start()
         {
             _loggerTimer.Start();
-            WriteLog(); // Ghi dữ liệu lần đầu ngay khi bật app
+            WriteLog();
         }
 
         public void Stop()
@@ -54,8 +54,7 @@ namespace WpfSensorApp
 
                 if (!File.Exists(_logFilePath))
                 {
-                    // Tạo file CSV sử dụng chuẩn Encoding.UTF8 (có BOM) để mở Excel không bị lỗi chữ
-                    string header = "Thời Gian,Nhiệt Độ,Độ Ẩm,Mực Nước" + Environment.NewLine;
+                    string header = "Thời Gian,Nhiệt Độ (°C),Độ Ẩm (%),Mực Nước (cm)" + Environment.NewLine;
                     File.WriteAllText(_logFilePath, header, Encoding.UTF8);
                 }
             }

@@ -70,19 +70,35 @@
             </Grid>
         </GroupBox>
 
-        <!-- KHU VỰC CÀI ĐẶT NGƯỠNG CẢNH BÁO -->
+        <!-- KHU VỰC CÀI ĐẶT NGƯỠNG CẢNH BÁO & NÚT CHECK LOGGER -->
         <GroupBox x:Name="grpThresholds" Header="Cài Đặt Ngưỡng Cảnh Báo" Grid.Row="1" Margin="0,0,0,15" Padding="8" Foreground="#333333">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock x:Name="lblTempThreshold" Text="🌡️ Ngưỡng Nhiệt độ (°C):" VerticalAlignment="Center" Margin="5,0" FontWeight="SemiBold"/>
-                <TextBox x:Name="txtTempThreshold" Width="60" Height="26" Text="35.0" 
-                         VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                         TextChanged="txtThreshold_TextChanged"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <TextBlock x:Name="lblWaterThreshold" Text="🌊 Ngưỡng Mực nước (Scale 0-10):" VerticalAlignment="Center" Margin="30,0,5,0" FontWeight="SemiBold"/>
-                <TextBox x:Name="txtWaterThreshold" Width="60" Height="26" Text="8.0" 
-                         VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                         TextChanged="txtThreshold_TextChanged"/>
-            </StackPanel>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock x:Name="lblTempThreshold" Text="🌡️ Ngưỡng Nhiệt độ (°C):" VerticalAlignment="Center" Margin="5,0" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtTempThreshold" Width="50" Height="26" Text="35.0" 
+                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                             TextChanged="txtThreshold_TextChanged"/>
+
+                    <TextBlock x:Name="lblHumThreshold" Text="💧 Ngưỡng Độ ẩm (%):" VerticalAlignment="Center" Margin="20,0,5,0" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtHumThreshold" Width="50" Height="26" Text="80.0" 
+                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                             TextChanged="txtThreshold_TextChanged"/>
+
+                    <TextBlock x:Name="lblWaterThreshold" Text="🌊 Ngưỡng Mực nước (Scale 0-10):" VerticalAlignment="Center" Margin="20,0,5,0" FontWeight="SemiBold"/>
+                    <TextBox x:Name="txtWaterThreshold" Width="50" Height="26" Text="8.0" 
+                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                             TextChanged="txtThreshold_TextChanged"/>
+                </StackPanel>
+
+                <Button x:Name="btnCheckLogger" Content="📊 Check Logger" Grid.Column="1" Height="28" Padding="10,0" Margin="10,0,5,0"
+                        Background="#FF009688" Foreground="White" FontWeight="Bold" 
+                        ToolTip="Xem file nhật ký dữ liệu cảm biến (CSV)" Click="btnCheckLogger_Click"/>
+            </Grid>
         </GroupBox>
 
         <Grid Grid.Row="2">
@@ -157,7 +173,7 @@
                                     <Rectangle Grid.Row="2" Fill="#29B6F6" ToolTip="Mức 0 - 4: An toàn"/>
                                 </Grid>
 
-                                <!-- Layer màn che -->
+                                <!-- Layer màn che phần chưa lấp đầy -->
                                 <Rectangle x:Name="rectUnfilledOverlay" Fill="#FAFAFA" VerticalAlignment="Top" Height="0"/>
                             </Grid>
                         </Border>
@@ -188,26 +204,25 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    
+
                     <TextBlock x:Name="lblCamTitle" Text="📷 CAMERA GIÁM SÁT MỰC NƯỚC" FontSize="13" FontWeight="Bold" Foreground="#FF7B1FA2" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                    
+
                     <Border Grid.Row="1" Background="Black" CornerRadius="5" ClipToBounds="True">
                         <Image x:Name="imgWebcam" Stretch="UniformToFill"/>
                     </Border>
 
                     <StackPanel Grid.Row="2" Margin="0,6,0,0">
                         <Grid Margin="0,0,0,4">
-                            <!-- NÚT VIEW GIỮ CỐ ĐỊNH TÊN -->
                             <Button x:Name="btnView" Content="👁️ View" Height="28" HorizontalAlignment="Left" Padding="10,0"
                                     Background="#FF2196F3" Foreground="White" FontWeight="Bold" ToolTip="Bật/Tắt tính toán Mực nước" Click="btnView_Click"/>
-                            
+
                             <Button x:Name="btnScreenshot" Content="📸" Width="28" Height="28" HorizontalAlignment="Right"
                                     Background="#FF4CAF50" Foreground="White" FontSize="14" FontWeight="Bold" ToolTip="Chụp Màn Hình Camera" Click="btnScreenshot_Click"/>
                         </Grid>
-                        
+
                         <Button x:Name="btnToggleGrayscale" Content="Gray" Height="26" Margin="0,0,0,4" 
                                 Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
-                        
+
                         <Button x:Name="btnToggleBackground" Content="Background" Height="26" Margin="0,0,0,4" 
                                 Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleBackground_Click"/>
 

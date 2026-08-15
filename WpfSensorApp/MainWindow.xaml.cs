@@ -30,7 +30,7 @@ namespace WpfSensorApp
         private SensorLogger _sensorLogger;
 
         private bool _isGrayscale = false;
-        private bool _showOverlay = false;
+        private bool _showOverlay = true;
         private bool _isBackgroundActive = false;
         private bool _isDarkMode = false;
         private bool _isViewActive = false;
@@ -47,12 +47,17 @@ namespace WpfSensorApp
         private int _frameCounter = 0;
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
+        // BIẾN NGƯỠNG VÀ CẢNH BÁO
         private double _tempThreshold = 35.0;
+        private double _humThreshold = 80.0;
         private double _waterThreshold = 8.0;
+
         private double _currentTemp = 0.0;
+        private double _currentHum = 0.0;
         private double _currentWaterScale = 0.0;
 
         private bool _isTempAlarm = false;
+        private bool _isHumAlarm = false;
         private bool _isWaterAlarm = false;
 
         private DispatcherTimer _blinkTimer;
@@ -73,7 +78,7 @@ namespace WpfSensorApp
 
             InitBlinkTimer();
 
-            // Khởi tạo Logger 5 phút lưu 1 lần
+            // Khởi tạo Logger lưu dữ liệu định kỳ 5 phút/lần vào file CSV
             _sensorLogger = new SensorLogger(() => (
                 ViewModel.Temperature,
                 ViewModel.Humidity,
@@ -91,14 +96,13 @@ namespace WpfSensorApp
         {
             LoadComPorts();
             StartWebcam();
-            
+
             Dispatcher.BeginInvoke(new Action(() => {
                 if (gridBarContainer != null && rectUnfilledOverlay != null)
                     rectUnfilledOverlay.Height = gridBarContainer.ActualHeight;
             }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
-        // Click View: Giữ cố định chữ "👁️ View", chỉ đổi màu nút
         private void btnView_Click(object sender, RoutedEventArgs e)
         {
             _isViewActive = !_isViewActive;
@@ -112,16 +116,16 @@ namespace WpfSensorApp
             {
                 btnView.Content = "👁️ View";
                 btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FF2196F3");
-                
+
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     ViewModel.WaterLevel = "--.-- cm";
                     ViewModel.DangerLevel = "0/10";
-                    
+
                     BrushConverter bc = new BrushConverter();
                     ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
                     ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
-                    
+
                     if (gridBarContainer != null && rectUnfilledOverlay != null)
                     {
                         rectUnfilledOverlay.Height = gridBarContainer.ActualHeight;
@@ -146,6 +150,7 @@ namespace WpfSensorApp
             Brush redBrush = (Brush)bc.ConvertFrom("#FFE53935");
             Brush whiteBrush = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
 
+            // Xử lý chớp màu cảnh báo Nhiệt độ
             if (_isTempAlarm)
             {
                 cardTemp.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
@@ -153,6 +158,16 @@ namespace WpfSensorApp
             else
             {
                 cardTemp.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+            }
+
+            // Xử lý chớp màu cảnh báo Độ ẩm
+            if (_isHumAlarm)
+            {
+                cardHum.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
+            }
+            else
+            {
+                cardHum.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
             }
 
             cardDanger.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : (Brush)bc.ConvertFrom("#FAFAFA");
@@ -166,6 +181,15 @@ namespace WpfSensorApp
                 if (double.TryParse(tempStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double temp))
                 {
                     _tempThreshold = temp;
+                }
+            }
+
+            if (txtHumThreshold != null)
+            {
+                string humStr = txtHumThreshold.Text.Replace(',', '.');
+                if (double.TryParse(humStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double hum))
+                {
+                    _humThreshold = hum;
                 }
             }
 
@@ -239,6 +263,7 @@ namespace WpfSensorApp
 
                 if (grpThresholds != null) grpThresholds.Foreground = MediaBrushes.White;
                 if (lblTempThreshold != null) lblTempThreshold.Foreground = MediaBrushes.White;
+                if (lblHumThreshold != null) lblHumThreshold.Foreground = MediaBrushes.White;
                 if (lblWaterThreshold != null) lblWaterThreshold.Foreground = MediaBrushes.White;
 
                 cardHum.Background = (Brush)bc.ConvertFrom("#1E2A1E");
@@ -259,6 +284,7 @@ namespace WpfSensorApp
 
                 if (grpThresholds != null) grpThresholds.Foreground = (Brush)bc.ConvertFrom("#333333");
                 if (lblTempThreshold != null) lblTempThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (lblHumThreshold != null) lblHumThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
                 if (lblWaterThreshold != null) lblWaterThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
 
                 cardHum.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
@@ -501,7 +527,7 @@ namespace WpfSensorApp
                             ViewModel.DangerLevel = $"Scale: {scaleLevel:F1} / 10";
 
                             BrushConverter bc = new BrushConverter();
-                            
+
                             if (scaleLevel >= 8.0)
                             {
                                 ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935");
@@ -558,7 +584,7 @@ namespace WpfSensorApp
 
                     Rectangle currentContainer = Rectangle.Empty;
                     double minDistanceToCamera = double.MaxValue;
-                    double minAreaThreshold = image.Width * image.Height * 0.008; 
+                    double minAreaThreshold = image.Width * image.Height * 0.008;
 
                     Point cameraAnchor = new Point(image.Width / 2, image.Height);
 
@@ -599,8 +625,8 @@ namespace WpfSensorApp
                         }
                         else
                         {
-                            double alphaPos = 0.03;  
-                            double alphaSize = 0.025; 
+                            double alphaPos = 0.03;
+                            double alphaSize = 0.025;
 
                             _smoothedX = _smoothedX * (1.0 - alphaPos) + currentContainer.X * alphaPos;
                             _smoothedY = _smoothedY * (1.0 - alphaPos) + currentContainer.Y * alphaPos;
@@ -794,10 +820,18 @@ namespace WpfSensorApp
                     ViewModel.Temperature = $"{tempStr} °C";
                     ViewModel.Humidity = $"{humStr} %";
 
+                    // Kiểm tra vượt ngưỡng Nhiệt độ
                     if (double.TryParse(tempStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedTemp))
                     {
                         _currentTemp = parsedTemp;
                         _isTempAlarm = _currentTemp >= _tempThreshold;
+                    }
+
+                    // Kiểm tra vượt ngưỡng Độ ẩm
+                    if (double.TryParse(humStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedHum))
+                    {
+                        _currentHum = parsedHum;
+                        _isHumAlarm = _currentHum >= _humThreshold;
                     }
                 }
             }
