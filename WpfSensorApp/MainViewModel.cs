@@ -6,13 +6,12 @@ namespace WpfSensorApp
 {
     public class MainViewModel : INotifyPropertyChanged
     {
-        private string _temperature = "--.-- °C";
-        private string _humidity = "--.-- %";
+        private string _temperature = "-- °C";
+        private string _humidity = "-- %";
         private string _waterLevel = "--.-- cm";
         private string _dangerLevel = "0/10";
-        private string _statusText = "Trạng thái: Sẵn sàng kết nối";
+        private string _statusText = "Trạng thái: Sẵn sàng";
         private Brush _statusColor = Brushes.Gray;
-        
         private Brush _waterLevelColor = (Brush)new BrushConverter().ConvertFrom("#FF0288D1");
         private Brush _waterLevelBgColor = (Brush)new BrushConverter().ConvertFrom("#FFE1F5FE");
 
@@ -64,11 +63,11 @@ namespace WpfSensorApp
             set { _waterLevelBgColor = value; OnPropertyChanged(); }
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        } 
+        }
     }
 }

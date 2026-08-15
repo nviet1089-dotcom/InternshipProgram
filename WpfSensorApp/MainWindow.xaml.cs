@@ -1,12 +1,14 @@
 ﻿#nullable disable
 using System;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading; // DispatcherTimer cho Day 27
+using System.Windows.Threading;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -15,6 +17,7 @@ using MediaBrushes = System.Windows.Media.Brushes;
 using Path = System.IO.Path;
 
 using Point = System.Drawing.Point;
+using PointF = System.Drawing.PointF;
 using Size = System.Drawing.Size;
 using Rectangle = System.Drawing.Rectangle;
 
@@ -29,12 +32,12 @@ namespace WpfSensorApp
         private bool _showOverlay = false;
         private bool _isBackgroundActive = false;
         private bool _isDarkMode = false;
+        private bool _isViewActive = false;
 
         private double _smoothedWaterY = -1;
         private double _lastDetectedWaterY = -1;
         private Rectangle _smoothedContainer = Rectangle.Empty;
 
-        // Các biến số thực phục vụ làm mượt và khóa khung nhận diện
         private double _smoothedX = -1;
         private double _smoothedY = -1;
         private double _smoothedW = -1;
@@ -43,7 +46,6 @@ namespace WpfSensorApp
         private int _frameCounter = 0;
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
-        // --- DAY 25 & 26: NGƯỠNG VÀ TRẠNG THÁI CẢNH BÁO ---
         private double _tempThreshold = 35.0;
         private double _waterThreshold = 8.0;
         private double _currentTemp = 0.0;
@@ -52,7 +54,6 @@ namespace WpfSensorApp
         private bool _isTempAlarm = false;
         private bool _isWaterAlarm = false;
 
-        // --- DAY 27: TIMER HIỆU ỨNG NHẤP NHÁY ---
         private DispatcherTimer _blinkTimer;
         private bool _isBlinkStateToggle = false;
 
@@ -76,9 +77,45 @@ namespace WpfSensorApp
         {
             LoadComPorts();
             StartWebcam();
+            
+            Dispatcher.BeginInvoke(new Action(() => {
+                if (gridBarContainer != null && rectUnfilledOverlay != null)
+                    rectUnfilledOverlay.Height = gridBarContainer.ActualHeight;
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
-        // --- DAY 27: KHỞI TẠO TIMER NHẤP NHÁY (400ms) ---
+        // Click View: Giữ cố định chữ "👁️ View", chỉ đổi màu nút
+        private void btnView_Click(object sender, RoutedEventArgs e)
+        {
+            _isViewActive = !_isViewActive;
+
+            if (_isViewActive)
+            {
+                btnView.Content = "👁️ View";
+                btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FFE53935");
+            }
+            else
+            {
+                btnView.Content = "👁️ View";
+                btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FF2196F3");
+                
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    ViewModel.WaterLevel = "--.-- cm";
+                    ViewModel.DangerLevel = "0/10";
+                    
+                    BrushConverter bc = new BrushConverter();
+                    ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
+                    ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
+                    
+                    if (gridBarContainer != null && rectUnfilledOverlay != null)
+                    {
+                        rectUnfilledOverlay.Height = gridBarContainer.ActualHeight;
+                    }
+                }));
+            }
+        }
+
         private void InitBlinkTimer()
         {
             _blinkTimer = new DispatcherTimer();
@@ -95,7 +132,6 @@ namespace WpfSensorApp
             Brush redBrush = (Brush)bc.ConvertFrom("#FFE53935");
             Brush whiteBrush = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
 
-            // 1. Nhấp nháy cảnh báo Nhiệt độ
             if (_isTempAlarm)
             {
                 cardTemp.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
@@ -105,28 +141,27 @@ namespace WpfSensorApp
                 cardTemp.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
             }
 
-            // 2. Nhấp nháy cảnh báo Mực nước
-            if (_isWaterAlarm)
-            {
-                cardDanger.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
-            }
-            else
-            {
-                cardDanger.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : (Brush)bc.ConvertFrom("#FAFAFA");
-            }
+            cardDanger.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : (Brush)bc.ConvertFrom("#FAFAFA");
         }
 
-        // --- DAY 25: LẤY DỮ LIỆU TỪ Ô NHẬP NGƯỠNG ---
         private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (txtTempThreshold != null && double.TryParse(txtTempThreshold.Text, out double temp))
+            if (txtTempThreshold != null)
             {
-                _tempThreshold = temp;
+                string tempStr = txtTempThreshold.Text.Replace(',', '.');
+                if (double.TryParse(tempStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double temp))
+                {
+                    _tempThreshold = temp;
+                }
             }
 
-            if (txtWaterThreshold != null && double.TryParse(txtWaterThreshold.Text, out double water))
+            if (txtWaterThreshold != null)
             {
-                _waterThreshold = water;
+                string waterStr = txtWaterThreshold.Text.Replace(',', '.');
+                if (double.TryParse(waterStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double water))
+                {
+                    _waterThreshold = water;
+                }
             }
         }
 
@@ -227,61 +262,191 @@ namespace WpfSensorApp
         {
             try
             {
-                if (imgWebcam.Source is BitmapSource bitmapSource)
+                if (_capture != null && _capture.IsOpened)
                 {
-                    string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
-                    if (!Directory.Exists(folderPath))
+                    using (Mat rawFrame = new Mat())
                     {
-                        Directory.CreateDirectory(folderPath);
+                        _capture.Retrieve(rawFrame);
+                        if (rawFrame.IsEmpty) return;
+
+                        Mat originalMat = rawFrame.Clone();
+                        BitmapImage originalBitmap = ConvertMatToBitmapImage(originalMat);
+
+                        Mat correctedMat = CorrectPerspectiveFrame(rawFrame);
+                        BitmapImage correctedBitmap = ConvertMatToBitmapImage(correctedMat);
+
+                        string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
+                        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+
+                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        string pathOrig = Path.Combine(folderPath, $"Original_Tilted_{timestamp}.png");
+                        string pathCorrected = Path.Combine(folderPath, $"Corrected_Straight_{timestamp}.png");
+
+                        SaveBitmapImageToFile(originalBitmap, pathOrig);
+                        SaveBitmapImageToFile(correctedBitmap, pathCorrected);
+
+                        ShowDualImagePreviewWindow(originalBitmap, correctedBitmap, pathOrig, pathCorrected);
+
+                        originalMat.Dispose();
+                        correctedMat.Dispose();
                     }
-
-                    string fileName = $"Screenshot_{DateTime.Now:yyyyMMdd_HHmmss}.png";
-                    string filePath = Path.Combine(folderPath, fileName);
-
-                    PngBitmapEncoder encoder = new PngBitmapEncoder();
-                    encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
-
-                    using (FileStream stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        encoder.Save(stream);
-                    }
-
-                    ShowImagePreviewWindow(bitmapSource, filePath);
                 }
                 else
                 {
-                    MessageBox.Show("Không có hình ảnh từ Camera để chụp!", 
-                                    "Thông Báo", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show("Không có hình ảnh từ Camera để chụp!", "Thông Báo", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi chụp màn hình: {ex.Message}", 
-                                "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Lỗi khi chụp và hiệu chỉnh ảnh: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void ShowImagePreviewWindow(BitmapSource imageSource, string filePath)
+        private Mat CorrectPerspectiveFrame(Mat src)
+        {
+            Mat corrected = src.Clone();
+
+            using (Mat gray = new Mat())
+            using (Mat edges = new Mat())
+            using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+            {
+                CvInvoke.CvtColor(src, gray, ColorConversion.Bgr2Gray);
+                CvInvoke.GaussianBlur(gray, gray, new Size(5, 5), 0);
+                CvInvoke.Canny(gray, edges, 35, 110);
+
+                CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+
+                RotatedRect maxRotatedRect = new RotatedRect();
+                double maxArea = 0;
+                double minAreaThreshold = src.Width * src.Height * 0.008;
+
+                for (int i = 0; i < contours.Size; i++)
+                {
+                    RotatedRect rRect = CvInvoke.MinAreaRect(contours[i]);
+                    double area = rRect.Size.Width * rRect.Size.Height;
+
+                    if (area > minAreaThreshold && area > maxArea)
+                    {
+                        maxArea = area;
+                        maxRotatedRect = rRect;
+                    }
+                }
+
+                if (maxArea > 0)
+                {
+                    PointF[] srcPts = maxRotatedRect.GetVertices();
+                    PointF[] orderedPts = OrderPoints(srcPts);
+
+                    float width = maxRotatedRect.Size.Width;
+                    float height = maxRotatedRect.Size.Height;
+
+                    if (width > height && maxRotatedRect.Angle < -45)
+                    {
+                        float temp = width;
+                        width = height;
+                        height = temp;
+                    }
+
+                    if (width < 10 || height < 10) return corrected;
+
+                    PointF[] dstPts = new PointF[]
+                    {
+                        new PointF(0, 0),
+                        new PointF(width - 1, 0),
+                        new PointF(width - 1, height - 1),
+                        new PointF(0, height - 1)
+                    };
+
+                    using (Mat M = CvInvoke.GetPerspectiveTransform(orderedPts, dstPts))
+                    {
+                        Mat warped = new Mat();
+                        CvInvoke.WarpPerspective(src, warped, M, new Size((int)width, (int)height));
+                        return warped;
+                    }
+                }
+            }
+
+            return corrected;
+        }
+
+        private PointF[] OrderPoints(PointF[] pts)
+        {
+            PointF[] ordered = new PointF[4];
+
+            var sumList = pts.Select(p => p.X + p.Y).ToArray();
+            var diffList = pts.Select(p => p.Y - p.X).ToArray();
+
+            ordered[0] = pts[Array.IndexOf(sumList, sumList.Min())];
+            ordered[2] = pts[Array.IndexOf(sumList, sumList.Max())];
+            ordered[1] = pts[Array.IndexOf(diffList, diffList.Min())];
+            ordered[3] = pts[Array.IndexOf(diffList, diffList.Max())];
+
+            return ordered;
+        }
+
+        private void ShowDualImagePreviewWindow(BitmapSource origImg, BitmapSource correctedImg, string origPath, string correctedPath)
         {
             Window previewWindow = new Window
             {
-                Title = $"Xem Ảnh Chụp - {Path.GetFileName(filePath)}",
-                Width = 680,
-                Height = 520,
+                Title = $"So Sánh Ảnh Chụp Camera - [{Path.GetFileName(origPath)}]",
+                Width = 1000,
+                Height = 550,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = this,
-                Background = MediaBrushes.Black
+                Background = (Brush)new BrushConverter().ConvertFrom("#121212")
             };
 
-            System.Windows.Controls.Image imgControl = new System.Windows.Controls.Image
+            Grid mainGrid = new Grid { Margin = new Thickness(10) };
+            mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            GroupBox grpOriginal = new GroupBox
             {
-                Source = imageSource,
-                Stretch = System.Windows.Media.Stretch.Uniform,
-                Margin = new Thickness(10)
+                Header = "📷 ÁNH GỐC CAMERA (BỊ NGHIÊNG)",
+                Foreground = MediaBrushes.OrangeRed,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(5)
             };
+            System.Windows.Controls.Image imgOrigControl = new System.Windows.Controls.Image
+            {
+                Source = origImg,
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(5)
+            };
+            grpOriginal.Content = imgOrigControl;
+            Grid.SetColumn(grpOriginal, 0);
 
-            previewWindow.Content = imgControl;
+            GroupBox grpCorrected = new GroupBox
+            {
+                Header = "✨ ÁNH ĐÃ HIỆU CHỈNH (PERSPECTIVE CORRECTION)",
+                Foreground = MediaBrushes.LimeGreen,
+                FontWeight = FontWeights.Bold,
+                Margin = new Thickness(5)
+            };
+            System.Windows.Controls.Image imgCorrectedControl = new System.Windows.Controls.Image
+            {
+                Source = correctedImg,
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(5)
+            };
+            grpCorrected.Content = imgCorrectedControl;
+            Grid.SetColumn(grpCorrected, 1);
+
+            mainGrid.Children.Add(grpOriginal);
+            mainGrid.Children.Add(grpCorrected);
+
+            previewWindow.Content = mainGrid;
             previewWindow.Show();
+        }
+
+        private void SaveBitmapImageToFile(BitmapSource bitmap, string filePath)
+        {
+            PngBitmapEncoder encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using (FileStream stream = new FileStream(filePath, FileMode.Create))
+            {
+                encoder.Save(stream);
+            }
         }
 
         private void ProcessFrame(object sender, EventArgs e)
@@ -307,8 +472,7 @@ namespace WpfSensorApp
                     double scaleLevel = ProcessContainerAndWaterLevel(processedFrame);
                     _currentWaterScale = scaleLevel;
 
-                    // DAY 26: Logic so sánh liên tục ngưỡng mực nước
-                    _isWaterAlarm = _currentWaterScale >= _waterThreshold;
+                    _isWaterAlarm = _isViewActive && (_currentWaterScale >= _waterThreshold);
 
                     double scaleRatio = scaleLevel / 10.0;
                     double waterHeightCm = scaleRatio * MAX_WATER_HEIGHT_CM;
@@ -317,39 +481,42 @@ namespace WpfSensorApp
 
                     Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
-                        ViewModel.DangerLevel = $"Scale: {scaleLevel:F1} / 10";
+                        if (_isViewActive)
+                        {
+                            ViewModel.WaterLevel = $"{waterHeightCm:F1} cm";
+                            ViewModel.DangerLevel = $"Scale: {scaleLevel:F1} / 10";
 
-                        BrushConverter bc = new BrushConverter();
-                        
-                        if (scaleLevel >= 8.0)
-                        {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935");
-                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E0F0F") : (Brush)bc.ConvertFrom("#FFFFEBEE");
-                        }
-                        else if (scaleLevel >= 5.0)
-                        {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17");
-                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E2E04") : (Brush)bc.ConvertFrom("#FFFDE0B2");
-                        }
-                        else if (scaleLevel >= 2.5)
-                        {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50");
-                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F3E18") : (Brush)bc.ConvertFrom("#FFE8F5E9");
-                        }
-                        else
-                        {
-                            ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
-                            ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
-                        }
-
-                        if (gridBarContainer != null && rectUnfilledOverlay != null)
-                        {
-                            double totalBarHeight = gridBarContainer.ActualHeight;
-                            if (totalBarHeight > 0)
+                            BrushConverter bc = new BrushConverter();
+                            
+                            if (scaleLevel >= 8.0)
                             {
-                                double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, scaleRatio));
-                                rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E0F0F") : (Brush)bc.ConvertFrom("#FFFFEBEE");
+                            }
+                            else if (scaleLevel >= 5.0)
+                            {
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E2E04") : (Brush)bc.ConvertFrom("#FFFDE0B2");
+                            }
+                            else if (scaleLevel >= 2.5)
+                            {
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F3E18") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+                            }
+                            else
+                            {
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
+                            }
+
+                            if (gridBarContainer != null && rectUnfilledOverlay != null)
+                            {
+                                double totalBarHeight = gridBarContainer.ActualHeight;
+                                if (totalBarHeight > 0)
+                                {
+                                    double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, scaleRatio));
+                                    rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
+                                }
                             }
                         }
 
@@ -362,6 +529,7 @@ namespace WpfSensorApp
             }
         }
 
+        // Chọn vật thể gần camera nhất & điều chỉnh khung vuông di chuyển cực kỳ chậm, chuẩn xác
         private double ProcessContainerAndWaterLevel(Mat image)
         {
             _frameCounter++;
@@ -376,8 +544,11 @@ namespace WpfSensorApp
                     CvInvoke.Canny(gray, edges, 35, 110);
 
                     Rectangle currentContainer = Rectangle.Empty;
-                    double maxArea = 0;
+                    double minDistanceToCamera = double.MaxValue;
                     double minAreaThreshold = image.Width * image.Height * 0.008; 
+
+                    // Điểm mốc đáy trung tâm camera (đại diện vị trí gần camera nhất)
+                    Point cameraAnchor = new Point(image.Width / 2, image.Height);
 
                     using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                     {
@@ -391,10 +562,17 @@ namespace WpfSensorApp
                             if (rect.X <= 2 || rect.Y <= 2 || rect.Right >= image.Width - 2 || rect.Bottom >= image.Height - 2)
                                 continue;
 
-                            if (area > minAreaThreshold && area > maxArea)
+                            if (area > minAreaThreshold)
                             {
-                                maxArea = area;
-                                currentContainer = rect;
+                                Point rectBottomCenter = new Point(rect.X + rect.Width / 2, rect.Bottom);
+                                double dist = Math.Sqrt(Math.Pow(rectBottomCenter.X - cameraAnchor.X, 2) + Math.Pow(rectBottomCenter.Y - cameraAnchor.Y, 2));
+
+                                // Chọn vật thể ở vị trí gần nhất
+                                if (dist < minDistanceToCamera)
+                                {
+                                    minDistanceToCamera = dist;
+                                    currentContainer = rect;
+                                }
                             }
                         }
                     }
@@ -410,23 +588,14 @@ namespace WpfSensorApp
                         }
                         else
                         {
-                            double deltaX = Math.Abs(currentContainer.X - _smoothedX);
-                            double deltaY = Math.Abs(currentContainer.Y - _smoothedY);
-                            double deltaW = Math.Abs(currentContainer.Width - _smoothedW);
-                            double deltaH = Math.Abs(currentContainer.Height - _smoothedH);
+                            // Tốc độ di chuyển và co giãn kích thước cực chậm giúp khung di chuyển siêu mượt
+                            double alphaPos = 0.03;  
+                            double alphaSize = 0.025; 
 
-                            bool isStationary = (deltaX < 12 && deltaY < 12 && deltaW < 15 && deltaH < 15);
-
-                            if (!isStationary)
-                            {
-                                double totalDelta = deltaX + deltaY + deltaW + deltaH;
-                                double alpha = totalDelta > 80 ? 0.22 : 0.08;
-
-                                _smoothedX = _smoothedX * (1.0 - alpha) + currentContainer.X * alpha;
-                                _smoothedY = _smoothedY * (1.0 - alpha) + currentContainer.Y * alpha;
-                                _smoothedW = _smoothedW * (1.0 - alpha) + currentContainer.Width * alpha;
-                                _smoothedH = _smoothedH * (1.0 - alpha) + currentContainer.Height * alpha;
-                            }
+                            _smoothedX = _smoothedX * (1.0 - alphaPos) + currentContainer.X * alphaPos;
+                            _smoothedY = _smoothedY * (1.0 - alphaPos) + currentContainer.Y * alphaPos;
+                            _smoothedW = _smoothedW * (1.0 - alphaSize) + currentContainer.Width * alphaSize;
+                            _smoothedH = _smoothedH * (1.0 - alphaSize) + currentContainer.Height * alphaSize;
                         }
 
                         _smoothedContainer = new Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
@@ -452,7 +621,7 @@ namespace WpfSensorApp
 
                     double currentWaterY = _smoothedContainer.Bottom;
 
-                    if (_frameCounter % 2 == 0 || _lastDetectedWaterY < 0)
+                    if (_frameCounter % 10 == 0 || _lastDetectedWaterY < 0)
                     {
                         LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
 
@@ -482,10 +651,7 @@ namespace WpfSensorApp
                     }
                     else
                     {
-                        if (Math.Abs(currentWaterY - _smoothedWaterY) > 3.0)
-                        {
-                            _smoothedWaterY = _smoothedWaterY * 0.88 + currentWaterY * 0.12;
-                        }
+                        _smoothedWaterY = _smoothedWaterY * 0.985 + currentWaterY * 0.015;
                     }
 
                     _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
@@ -618,8 +784,7 @@ namespace WpfSensorApp
                     ViewModel.Temperature = $"{tempStr} °C";
                     ViewModel.Humidity = $"{humStr} %";
 
-                    // DAY 26: Logic so sánh liên tục ngưỡng nhiệt độ từ Serial
-                    if (double.TryParse(tempStr, out double parsedTemp))
+                    if (double.TryParse(tempStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedTemp))
                     {
                         _currentTemp = parsedTemp;
                         _isTempAlarm = _currentTemp >= _tempThreshold;

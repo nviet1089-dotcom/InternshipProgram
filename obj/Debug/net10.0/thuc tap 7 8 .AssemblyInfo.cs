@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("thuc tap 7 8 ")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7a90a99bdc7f6ee36cefff7432b0e46d91c26c67")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9bd47807ab2d7413573d5c47c3ebf05f09f857c5")]
 [assembly: System.Reflection.AssemblyProductAttribute("thuc tap 7 8 ")]
 [assembly: System.Reflection.AssemblyTitleAttribute("thuc tap 7 8 ")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

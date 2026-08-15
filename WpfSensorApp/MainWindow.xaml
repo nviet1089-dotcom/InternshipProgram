@@ -70,7 +70,7 @@
             </Grid>
         </GroupBox>
 
-        <!-- KHU VỰC CÀI ĐẶT NGƯỠNG CẢNH BÁO (DAY 25) -->
+        <!-- KHU VỰC CÀI ĐẶT NGƯỠNG CẢNH BÁO -->
         <GroupBox x:Name="grpThresholds" Header="Cài Đặt Ngưỡng Cảnh Báo" Grid.Row="1" Margin="0,0,0,15" Padding="8" Foreground="#333333">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock x:Name="lblTempThreshold" Text="🌡️ Ngưỡng Nhiệt độ (°C):" VerticalAlignment="Center" Margin="5,0" FontWeight="SemiBold"/>
@@ -116,7 +116,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Mực nước thực tế (Tự động đổi màu) -->
+                <!-- Mực nước thực tế -->
                 <Border x:Name="cardWater" Grid.Row="2" Background="{Binding WaterLevelBgColor}" BorderBrush="{Binding WaterLevelColor}" BorderThickness="1.5" CornerRadius="8" Margin="0,5,0,0" Padding="10">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                         <TextBlock x:Name="lblWaterHeader" Text="🌊 MỰC NƯỚC THỰC TẾ" FontSize="12" FontWeight="Bold" Foreground="{Binding WaterLevelColor}"/>
@@ -196,8 +196,14 @@
                     </Border>
 
                     <StackPanel Grid.Row="2" Margin="0,6,0,0">
-                        <Button x:Name="btnScreenshot" Content="📸" Width="28" Height="28" HorizontalAlignment="Right" Margin="0,0,0,4"
-                                Background="#FF4CAF50" Foreground="White" FontSize="14" FontWeight="Bold" ToolTip="Chụp Màn Hình Camera" Click="btnScreenshot_Click"/>
+                        <Grid Margin="0,0,0,4">
+                            <!-- NÚT VIEW GIỮ CỐ ĐỊNH TÊN -->
+                            <Button x:Name="btnView" Content="👁️ View" Height="28" HorizontalAlignment="Left" Padding="10,0"
+                                    Background="#FF2196F3" Foreground="White" FontWeight="Bold" ToolTip="Bật/Tắt tính toán Mực nước" Click="btnView_Click"/>
+                            
+                            <Button x:Name="btnScreenshot" Content="📸" Width="28" Height="28" HorizontalAlignment="Right"
+                                    Background="#FF4CAF50" Foreground="White" FontSize="14" FontWeight="Bold" ToolTip="Chụp Màn Hình Camera" Click="btnScreenshot_Click"/>
+                        </Grid>
                         
                         <Button x:Name="btnToggleGrayscale" Content="Gray" Height="26" Margin="0,0,0,4" 
                                 Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
