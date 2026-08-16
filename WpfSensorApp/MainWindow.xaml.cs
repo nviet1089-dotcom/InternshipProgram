@@ -1,11 +1,14 @@
 ﻿#nullable disable
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -23,6 +26,14 @@ using Rectangle = System.Drawing.Rectangle;
 
 namespace WpfSensorApp
 {
+    public class LogModel
+    {
+        public string Time { get; set; }
+        public string Temperature { get; set; }
+        public string Humidity { get; set; }
+        public string WaterLevel { get; set; }
+    }
+
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
@@ -30,10 +41,12 @@ namespace WpfSensorApp
         private SensorLogger _sensorLogger;
 
         private bool _isGrayscale = false;
-        private bool _showOverlay = true;
-        private bool _isBackgroundActive = false;
+        private bool _showOverlay = false; // Mặc định TẮT vạch mực nước khi mở ứng dụng
+        private bool _isBackgroundActive = false; // Mặc định TẮT background khi mở ứng dụng
         private bool _isDarkMode = false;
         private bool _isViewActive = false;
+
+        private double _currentScaleRatio = 0.0; // Lưu tỷ lệ mực nước (0.0 đến 1.0) để cập nhật thước scale
 
         private double _smoothedWaterY = -1;
         private double _lastDetectedWaterY = -1;
@@ -89,7 +102,123 @@ namespace WpfSensorApp
 
         private void btnCheckLogger_Click(object sender, RoutedEventArgs e)
         {
-            _sensorLogger?.OpenLogFile();
+            ShowLogWindow();
+        }
+
+        private void ShowLogWindow()
+        {
+            string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "sensor_data_log.csv");
+
+            if (!File.Exists(logFilePath))
+            {
+                MessageBox.Show("Chưa có dữ liệu nhật ký được lưu!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var logList = new List<LogModel>();
+            try
+            {
+                string[] lines = File.ReadAllLines(logFilePath, Encoding.UTF8);
+
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    if (string.IsNullOrWhiteSpace(lines[i])) continue;
+
+                    string[] parts = lines[i].Split(',');
+                    if (parts.Length >= 3)
+                    {
+                        logList.Add(new LogModel
+                        {
+                            Time = parts[0].Trim(),
+                            Temperature = parts[1].Trim() + " °C",
+                            Humidity = parts[2].Trim() + " %",
+                            WaterLevel = parts.Length >= 4 ? parts[3].Trim() + " cm" : "--"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi khi đọc nhật ký: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            BrushConverter bc = new BrushConverter();
+            Window logWindow = new Window
+            {
+                Title = "📊 Lịch Sử Nhật Ký Nhiệt Độ & Độ Ẩm",
+                Width = 680,
+                Height = 480,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                Background = _isDarkMode ? (Brush)bc.ConvertFrom("#121212") : MediaBrushes.White
+            };
+
+            Grid mainGrid = new Grid { Margin = new Thickness(15) };
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+            TextBlock lblHeader = new TextBlock
+            {
+                Text = "📋 NHẬT KÝ DỮ LIỆU CẢM BIẾN ĐỊNH KỲ",
+                FontSize = 15,
+                FontWeight = FontWeights.Bold,
+                Foreground = _isDarkMode ? MediaBrushes.Cyan : (Brush)bc.ConvertFrom("#FF009688"),
+                Margin = new Thickness(0, 0, 0, 12),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            Grid.SetRow(lblHeader, 0);
+
+            DataGrid dataGrid = new DataGrid
+            {
+                AutoGenerateColumns = false,
+                IsReadOnly = true,
+                ItemsSource = logList,
+                GridLinesVisibility = DataGridGridLinesVisibility.Horizontal,
+                HeadersVisibility = DataGridHeadersVisibility.Column,
+                Background = MediaBrushes.Transparent,
+                RowBackground = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White,
+                Foreground = _isDarkMode ? MediaBrushes.White : MediaBrushes.Black,
+                FontSize = 13,
+                BorderThickness = new Thickness(1),
+                BorderBrush = (Brush)bc.ConvertFrom("#CCCCCC")
+            };
+
+            dataGrid.Columns.Add(new DataGridTextColumn
+            {
+                Header = "Thời Gian",
+                Binding = new Binding("Time"),
+                Width = new DataGridLength(1.8, DataGridLengthUnitType.Star)
+            });
+
+            dataGrid.Columns.Add(new DataGridTextColumn
+            {
+                Header = "🌡️ Nhiệt Độ",
+                Binding = new Binding("Temperature"),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+
+            dataGrid.Columns.Add(new DataGridTextColumn
+            {
+                Header = "💧 Độ Ẩm",
+                Binding = new Binding("Humidity"),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+
+            dataGrid.Columns.Add(new DataGridTextColumn
+            {
+                Header = "🌊 Mực Nước",
+                Binding = new Binding("WaterLevel"),
+                Width = new DataGridLength(1, DataGridLengthUnitType.Star)
+            });
+
+            Grid.SetRow(dataGrid, 1);
+
+            mainGrid.Children.Add(lblHeader);
+            mainGrid.Children.Add(dataGrid);
+
+            logWindow.Content = mainGrid;
+            logWindow.ShowDialog();
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -98,9 +227,26 @@ namespace WpfSensorApp
             StartWebcam();
 
             Dispatcher.BeginInvoke(new Action(() => {
-                if (gridBarContainer != null && rectUnfilledOverlay != null)
-                    rectUnfilledOverlay.Height = gridBarContainer.ActualHeight;
+                UpdateDangerBar();
             }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        private void UpdateDangerBar()
+        {
+            if (gridBarContainer == null || rectUnfilledOverlay == null) return;
+
+            double totalBarHeight = gridBarContainer.ActualHeight;
+            if (totalBarHeight <= 0) return;
+
+            // Nếu không bật View thì che 100% thanh màu, nếu bật View thì tính theo tỷ lệ mực nước
+            double ratio = _isViewActive ? _currentScaleRatio : 0.0;
+            double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, ratio));
+            rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
+        }
+
+        private void gridBarContainer_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateDangerBar();
         }
 
         private void btnView_Click(object sender, RoutedEventArgs e)
@@ -126,10 +272,8 @@ namespace WpfSensorApp
                     ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
                     ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
 
-                    if (gridBarContainer != null && rectUnfilledOverlay != null)
-                    {
-                        rectUnfilledOverlay.Height = gridBarContainer.ActualHeight;
-                    }
+                    _currentScaleRatio = 0.0;
+                    UpdateDangerBar();
                 }));
             }
         }
@@ -150,7 +294,6 @@ namespace WpfSensorApp
             Brush redBrush = (Brush)bc.ConvertFrom("#FFE53935");
             Brush whiteBrush = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
 
-            // Xử lý chớp màu cảnh báo Nhiệt độ
             if (_isTempAlarm)
             {
                 cardTemp.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
@@ -160,7 +303,6 @@ namespace WpfSensorApp
                 cardTemp.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
             }
 
-            // Xử lý chớp màu cảnh báo Độ ẩm
             if (_isHumAlarm)
             {
                 cardHum.Background = _isBlinkStateToggle ? redBrush : whiteBrush;
@@ -228,12 +370,14 @@ namespace WpfSensorApp
         private void btnToggleGrayscale_Click(object sender, RoutedEventArgs e)
         {
             _isGrayscale = !_isGrayscale;
+            btnToggleGrayscale.Content = _isGrayscale ? "Tắt Ảnh Xám (Gray)" : "Bật Ảnh Xám (Gray)";
             btnToggleGrayscale.Background = _isGrayscale ? _colorRed : _colorGreen;
         }
 
         private void btnToggleBackground_Click(object sender, RoutedEventArgs e)
         {
             _isBackgroundActive = !_isBackgroundActive;
+            btnToggleBackground.Content = _isBackgroundActive ? "Tắt Background" : "Bật Background";
             btnToggleBackground.Background = _isBackgroundActive ? _colorRed : _colorGreen;
         }
 
@@ -447,7 +591,7 @@ namespace WpfSensorApp
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(5)
             };
-            System.Windows.Controls.Image imgOrigControl = new System.Windows.Controls.Image
+            Image imgOrigControl = new Image
             {
                 Source = origImg,
                 Stretch = Stretch.Uniform,
@@ -463,7 +607,7 @@ namespace WpfSensorApp
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(5)
             };
-            System.Windows.Controls.Image imgCorrectedControl = new System.Windows.Controls.Image
+            Image imgCorrectedControl = new Image
             {
                 Source = correctedImg,
                 Stretch = Stretch.Uniform,
@@ -515,6 +659,8 @@ namespace WpfSensorApp
                     _isWaterAlarm = _isViewActive && (_currentWaterScale >= _waterThreshold);
 
                     double scaleRatio = scaleLevel / 10.0;
+                    _currentScaleRatio = scaleRatio;
+
                     double waterHeightCm = scaleRatio * MAX_WATER_HEIGHT_CM;
 
                     BitmapImage bitmapImage = ConvertMatToBitmapImage(processedFrame);
@@ -549,15 +695,7 @@ namespace WpfSensorApp
                                 ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
                             }
 
-                            if (gridBarContainer != null && rectUnfilledOverlay != null)
-                            {
-                                double totalBarHeight = gridBarContainer.ActualHeight;
-                                if (totalBarHeight > 0)
-                                {
-                                    double unfilledRatio = 1.0 - Math.Min(1.0, Math.Max(0.0, scaleRatio));
-                                    rectUnfilledOverlay.Height = totalBarHeight * unfilledRatio;
-                                }
-                            }
+                            UpdateDangerBar();
                         }
 
                         if (imgWebcam != null)
@@ -695,9 +833,9 @@ namespace WpfSensorApp
                     if (_showOverlay && !_smoothedContainer.IsEmpty)
                     {
                         CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
-                        CvInvoke.Line(image, 
-                            new Point(0, (int)_smoothedWaterY), 
-                            new Point(image.Width - 1, (int)_smoothedWaterY), 
+                        CvInvoke.Line(image,
+                            new Point(0, (int)_smoothedWaterY),
+                            new Point(image.Width - 1, (int)_smoothedWaterY),
                             new MCvScalar(0, 0, 255), 3);
                     }
 
@@ -741,7 +879,7 @@ namespace WpfSensorApp
             string[] ports = SerialPort.GetPortNames();
             foreach (string port in ports) cboComPorts.Items.Add(port);
             if (cboComPorts.Items.Count > 0) cboComPorts.SelectedIndex = 0;
-            else 
+            else
             {
                 ViewModel.StatusText = "Trạng thái: Không tìm thấy cổng COM!";
                 ViewModel.StatusColor = MediaBrushes.Red;
@@ -820,14 +958,12 @@ namespace WpfSensorApp
                     ViewModel.Temperature = $"{tempStr} °C";
                     ViewModel.Humidity = $"{humStr} %";
 
-                    // Kiểm tra vượt ngưỡng Nhiệt độ
                     if (double.TryParse(tempStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedTemp))
                     {
                         _currentTemp = parsedTemp;
                         _isTempAlarm = _currentTemp >= _tempThreshold;
                     }
 
-                    // Kiểm tra vượt ngưỡng Độ ẩm
                     if (double.TryParse(humStr.Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedHum))
                     {
                         _currentHum = parsedHum;
@@ -841,16 +977,16 @@ namespace WpfSensorApp
         {
             _sensorLogger?.Stop();
             if (_blinkTimer != null) _blinkTimer.Stop();
-            if (_capture != null) 
-            { 
-                _capture.Stop(); 
-                _capture.Dispose(); 
+            if (_capture != null)
+            {
+                _capture.Stop();
+                _capture.Dispose();
             }
-            if (_serialPort != null && _serialPort.IsOpen) 
-            { 
-                _serialPort.Close(); 
-                _serialPort.Dispose(); 
-            } 
+            if (_serialPort != null && _serialPort.IsOpen)
+            {
+                _serialPort.Close();
+                _serialPort.Dispose();
+            }
             base.OnClosed(e);
         }
     }

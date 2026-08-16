@@ -160,7 +160,7 @@
 
                         <!-- Khung chứa thanh màu -->
                         <Border Grid.Column="0" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1" Background="#FAFAFA">
-                            <Grid x:Name="gridBarContainer">
+                            <Grid x:Name="gridBarContainer" SizeChanged="gridBarContainer_SizeChanged">
                                 <Grid VerticalAlignment="Stretch">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="2*"/>
@@ -220,10 +220,10 @@
                                     Background="#FF4CAF50" Foreground="White" FontSize="14" FontWeight="Bold" ToolTip="Chụp Màn Hình Camera" Click="btnScreenshot_Click"/>
                         </Grid>
 
-                        <Button x:Name="btnToggleGrayscale" Content="Gray" Height="26" Margin="0,0,0,4" 
+                        <Button x:Name="btnToggleGrayscale" Content="Bật Ảnh Xám (Gray)" Height="26" Margin="0,0,0,4" 
                                 Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleGrayscale_Click"/>
 
-                        <Button x:Name="btnToggleBackground" Content="Background" Height="26" Margin="0,0,0,4" 
+                        <Button x:Name="btnToggleBackground" Content="Bật Background" Height="26" Margin="0,0,0,4" 
                                 Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnToggleBackground_Click"/>
 
                         <Button x:Name="btnToggleOverlay" Content="Hiển thị Vạch Mực Nước" Height="26"
