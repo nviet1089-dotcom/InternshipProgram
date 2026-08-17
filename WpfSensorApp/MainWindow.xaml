@@ -154,12 +154,26 @@
 
                     <Grid Grid.Row="1" HorizontalAlignment="Center">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="24"/>
                             <ColumnDefinition Width="28"/>
+                            <ColumnDefinition Width="24"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Khung chứa thanh màu -->
-                        <Border Grid.Column="0" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1" Background="#FAFAFA">
+                        <!-- CỘT SỐ HÀNG VẠCH (ĐÃ CHUYỂN SANG BÊN TRÁI) -->
+                        <Grid Grid.Column="0" Margin="0,0,4,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="2*"/>
+                                <RowDefinition Height="4*"/>
+                                <RowDefinition Height="4*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="10" FontSize="10" FontWeight="Bold" Foreground="#E53935" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,-5,0,0"/>
+                            <TextBlock Grid.Row="0" Text="8 -" FontSize="10" FontWeight="Bold" Foreground="#F57F17" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,-5"/>
+                            <TextBlock Grid.Row="1" Text="4 -" FontSize="10" FontWeight="Bold" Foreground="#0288D1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,-5"/>
+                            <TextBlock Grid.Row="2" Text="0 -" FontSize="10" FontWeight="Bold" Foreground="#616161" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,-5"/>
+                        </Grid>
+
+                        <!-- KHUNG CHỨA THANH MÀU SCALE (ĐÃ CHUYỂN SANG BÊN PHẢI) -->
+                        <Border Grid.Column="1" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1" Background="#FAFAFA">
                             <Grid x:Name="gridBarContainer" SizeChanged="gridBarContainer_SizeChanged">
                                 <Grid VerticalAlignment="Stretch">
                                     <Grid.RowDefinitions>
@@ -177,19 +191,6 @@
                                 <Rectangle x:Name="rectUnfilledOverlay" Fill="#FAFAFA" VerticalAlignment="Top" Height="0"/>
                             </Grid>
                         </Border>
-
-                        <Grid Grid.Column="1" Margin="4,0,0,0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="2*"/>
-                                <RowDefinition Height="4*"/>
-                                <RowDefinition Height="4*"/>
-                            </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0" Text="10" FontSize="10" FontWeight="Bold" Foreground="#E53935" VerticalAlignment="Top" Margin="0,-5,0,0"/>
-                            <TextBlock Grid.Row="0" Text="- 8" FontSize="10" FontWeight="Bold" Foreground="#F57F17" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
-                            <TextBlock Grid.Row="1" Text="- 4" FontSize="10" FontWeight="Bold" Foreground="#0288D1" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
-                            <TextBlock Grid.Row="2" Text="- 0" FontSize="10" FontWeight="Bold" Foreground="#616161" VerticalAlignment="Bottom" Margin="0,0,0,-5"/>
-                        </Grid>
                     </Grid>
 
                     <TextBlock x:Name="txtDangerLevel" Grid.Row="2" Text="{Binding DangerLevel}" FontSize="12" FontWeight="Bold" Foreground="#333333" HorizontalAlignment="Center" Margin="0,8,0,0"/>
