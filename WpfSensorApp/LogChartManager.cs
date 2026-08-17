@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace YourNamespace // Thay YourNamespace bằng namespace chính trong dự án của bạn (ví dụ: WpfApp1)
+namespace WpfSensorApp
 {
     public static class LogChartManager
     {
@@ -40,7 +42,7 @@ namespace YourNamespace // Thay YourNamespace bằng namespace chính trong dự
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-            // 1. KHUNG CHỨA 3 NÚT LỌC CHIA ĐỀU BẰNG NHAU VÀ NÚT ĐỔI THEME
+            // 1. KHUNG CHỨA 3 NÚT LỌC VÀ NÚT ĐỔI THEME
             Border headerCard = new Border
             {
                 Background = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : Brushes.White,
@@ -54,7 +56,7 @@ namespace YourNamespace // Thay YourNamespace bằng namespace chính trong dự
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            System.Windows.Controls.Primitives.UniformGrid timerGrid = new System.Windows.Controls.Primitives.UniformGrid
+            UniformGrid timerGrid = new UniformGrid
             {
                 Rows = 1,
                 Columns = 3,
@@ -82,7 +84,6 @@ namespace YourNamespace // Thay YourNamespace bằng namespace chính trong dự
             timerGrid.Children.Add(btnWeek);
             timerGrid.Children.Add(btnMonth);
 
-            // Toggle switch Dark / Light Mode
             CheckBox toggleLoggerTheme = new CheckBox
             {
                 Style = (Style)ownerWindow.FindResource("PhoneToggleSwitchStyle"),
@@ -238,20 +239,31 @@ namespace YourNamespace // Thay YourNamespace bằng namespace chính trong dự
                 var lines = File.ReadAllLines(path).Skip(1);
                 foreach (var line in lines)
                 {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
                     var parts = line.Split(',');
                     if (parts.Length >= 4)
                     {
-                        if (DateTime.TryParse(parts[0], out DateTime ts) &&
-                            double.TryParse(parts[1], out double water) &&
-                            double.TryParse(parts[2], out double temp) &&
-                            double.TryParse(parts[3], out double hum))
+                        if (DateTime.TryParseExact(parts[0].Trim(), "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime ts) &&
+                            double.TryParse(parts[1].Trim().Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double temp) &&
+                            double.TryParse(parts[2].Trim().Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double hum) &&
+                            double.TryParse(parts[3].Trim().Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double water))
                         {
-                            list.Add(new LogModel { Timestamp = ts, WaterLevel = water, Temperature = temp, Humidity = hum });
+                            list.Add(new LogModel
+                            {
+                                Timestamp = ts,
+                                TimeStr = ts.ToString("HH:mm dd/MM"),
+                                Temperature = temp,
+                                Humidity = hum,
+                                WaterLevel = water
+                            });
                         }
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Lỗi đọc log: {ex.Message}");
+            }
             return list;
         }
 
@@ -390,6 +402,7 @@ namespace YourNamespace // Thay YourNamespace bằng namespace chính trong dự
     public class LogModel
     {
         public DateTime Timestamp { get; set; }
+        public string TimeStr { get; set; }
         public double WaterLevel { get; set; }
         public double Temperature { get; set; }
         public double Humidity { get; set; }

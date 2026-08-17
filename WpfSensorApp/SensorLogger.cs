@@ -47,9 +47,9 @@ namespace WpfSensorApp
                 var data = _getDataDelegate();
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 
-                string temp = data.Temp?.Replace(" °C", "").Trim() ?? "--";
-                string hum = data.Hum?.Replace(" %", "").Trim() ?? "--";
-                string water = data.Water?.Replace(" cm", "").Trim() ?? "--";
+                string temp = data.Temp?.Replace(" °C", "").Replace(',', '.').Trim() ?? "--";
+                string hum = data.Hum?.Replace(" %", "").Replace(',', '.').Trim() ?? "--";
+                string water = data.Water?.Replace(" cm", "").Replace(',', '.').Trim() ?? "--";
 
                 string csvLine = $"{timestamp},{temp},{hum},{water}\n";
                 File.AppendAllText(_logFilePath, csvLine, Encoding.UTF8);

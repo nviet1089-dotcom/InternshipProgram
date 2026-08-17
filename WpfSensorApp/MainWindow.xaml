@@ -7,7 +7,7 @@
         Background="#FFFFFF">
 
     <Window.Resources>
-        <!-- Style Thanh Gạt (Toggle Switch) Kiểu Điện Thoại Mobile -->
+        <!-- Style Thanh Gạt (Toggle Switch) Kiểu Mobile -->
         <Style x:Key="PhoneToggleSwitchStyle" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -63,7 +63,6 @@
                 <Button x:Name="btnConnect" Content="Connect" Grid.Column="3" Width="85" Height="28" Margin="0,0,5,0" Background="#FF4CAF50" Foreground="White" FontWeight="Bold" Click="btnConnect_Click"/>
                 <Button x:Name="btnDisconnect" Content="Disconnect" Grid.Column="4" Width="85" Height="28" Margin="0,0,20,0" Background="#FFE53935" Foreground="White" FontWeight="Bold" IsEnabled="False" Click="btnDisconnect_Click"/>
 
-                <!-- THANH GẠT CHUYỂN GIAO DIỆN SÁNG / TỐI -->
                 <CheckBox x:Name="toggleDarkMode" Grid.Column="5" Style="{StaticResource PhoneToggleSwitchStyle}" VerticalAlignment="Center" Click="toggleDarkMode_Click">
                     <TextBlock x:Name="lblDarkMode" Text="🌙 Dark Mode" FontWeight="Bold" FontSize="12" Foreground="#333333"/>
                 </CheckBox>
@@ -158,7 +157,6 @@
                             <ColumnDefinition Width="24"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- CỘT SỐ HÀNG VẠCH (ĐÃ CHUYỂN SANG BÊN TRÁI) -->
                         <Grid Grid.Column="0" Margin="0,0,4,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="2*"/>
@@ -172,7 +170,6 @@
                             <TextBlock Grid.Row="2" Text="0 -" FontSize="10" FontWeight="Bold" Foreground="#616161" VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,0,-5"/>
                         </Grid>
 
-                        <!-- KHUNG CHỨA THANH MÀU SCALE (ĐÃ CHUYỂN SANG BÊN PHẢI) -->
                         <Border Grid.Column="1" CornerRadius="5" ClipToBounds="True" BorderBrush="#BDBDBD" BorderThickness="1" Background="#FAFAFA">
                             <Grid x:Name="gridBarContainer" SizeChanged="gridBarContainer_SizeChanged">
                                 <Grid VerticalAlignment="Stretch">
@@ -187,7 +184,6 @@
                                     <Rectangle Grid.Row="2" Fill="#29B6F6" ToolTip="Mức 0 - 4: An toàn"/>
                                 </Grid>
 
-                                <!-- Layer màn che phần chưa lấp đầy -->
                                 <Rectangle x:Name="rectUnfilledOverlay" Fill="#FAFAFA" VerticalAlignment="Top" Height="0"/>
                             </Grid>
                         </Border>

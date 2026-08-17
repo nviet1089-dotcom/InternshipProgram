@@ -5,11 +5,8 @@ using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -19,23 +16,12 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using MediaBrushes = System.Windows.Media.Brushes;
 using Path = System.IO.Path;
-
 using Point = System.Drawing.Point;
 using PointF = System.Drawing.PointF;
 using Size = System.Drawing.Size;
-using System.Drawing; // Dùng cho System.Drawing.Rectangle của Emgu CV
 
 namespace WpfSensorApp
 {
-    public class LogModel
-    {
-        public DateTime Timestamp { get; set; }
-        public string TimeStr { get; set; }
-        public double Temperature { get; set; }
-        public double Humidity { get; set; }
-        public double WaterLevel { get; set; }
-    }
-
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
@@ -62,7 +48,6 @@ namespace WpfSensorApp
         private int _frameCounter = 0;
         private const double MAX_WATER_HEIGHT_CM = 20.0;
 
-        // BIẾN NGƯỠNG VÀ CẢNH BÁO
         private double _tempThreshold = 35.0;
         private double _humThreshold = 80.0;
         private double _waterThreshold = 8.0;
@@ -78,8 +63,8 @@ namespace WpfSensorApp
         private DispatcherTimer _blinkTimer;
         private bool _isBlinkStateToggle = false;
 
-        private readonly System.Windows.Media.Brush _colorGreen = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FF4CAF50");
-        private readonly System.Windows.Media.Brush _colorRed = (System.Windows.Media.Brush)new System.Windows.Media.BrushConverter().ConvertFrom("#FFE53935");
+        private readonly Brush _colorGreen = (Brush)new BrushConverter().ConvertFrom("#FF4CAF50");
+        private readonly Brush _colorRed = (Brush)new BrushConverter().ConvertFrom("#FFE53935");
 
         public MainViewModel ViewModel { get; set; } = new MainViewModel();
 
@@ -93,7 +78,6 @@ namespace WpfSensorApp
 
             InitBlinkTimer();
 
-            // Khởi tạo Logger lưu dữ liệu định kỳ 5 phút/lần vào file CSV
             _sensorLogger = new SensorLogger(() => (
                 ViewModel.Temperature,
                 ViewModel.Humidity,
@@ -104,195 +88,10 @@ namespace WpfSensorApp
 
         private void btnCheckLogger_Click(object sender, RoutedEventArgs e)
         {
-            ShowLogWindow();
+            LogChartManager.ShowLogWindow(this, _isDarkMode, (content) => CreateModernButton(content, "#2196F3"));
         }
 
-        #region GIAO DIỆN NHẬT KÝ & BIỂU ĐỒ CHUYÊN NGHIỆP (LOG & GRAPH WINDOW)
-
-        private void ShowLogWindow()
-        {
-            string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Logs", "sensor_data_log.csv");
-
-            if (!File.Exists(logFilePath))
-            {
-                MessageBox.Show("Chưa có dữ liệu nhật ký được lưu!", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            List<LogModel> allLogs = LoadLogData(logFilePath);
-
-            BrushConverter bc = new BrushConverter();
-            bool isLoggerDarkMode = _isDarkMode; // Thừa hưởng cấu hình theme ban đầu
-
-            Window logWindow = new Window
-            {
-                Title = "NHẬT KÝ VÀ BIỂU ĐỒ LỊCH SỬ DỮ LIỆU CẢM BIẾN",
-                Width = 960,
-                Height = 780,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = this,
-                Background = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#121212") : (System.Windows.Media.Brush)bc.ConvertFrom("#F4F6F9")
-            };
-
-            Grid mainGrid = new Grid { Margin = new Thickness(16) };
-            mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Khung điều khiển & Bộ lọc
-            mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Khung biểu đồ
-
-            // 1. KHUNG BỘ LỌC THỜI GIAN & NÚT GẠT ĐỔI MÀU NỀN
-            Border headerCard = new Border
-            {
-                Background = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White,
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(12, 10, 12, 10),
-                Margin = new Thickness(0, 0, 0, 12),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = 0.08 }
-            };
-
-            Grid headerGrid = new Grid();
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            // Cụm 3 nút lọc bấm màu xanh lam (#2196F3)
-            StackPanel timerPanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            Button btnDay = CreateModernButton("DAY", "#2196F3");
-            Button btnWeek = CreateModernButton("WEEK", "#2196F3");
-            Button btnMonth = CreateModernButton("MONTH", "#2196F3");
-
-            timerPanel.Children.Add(btnDay);
-            timerPanel.Children.Add(btnWeek);
-            timerPanel.Children.Add(btnMonth);
-
-            // Nút gạt (Toggle Switch) đổi màu nền Logger đặt bên cạnh 3 nút lọc
-            CheckBox toggleLoggerTheme = new CheckBox
-            {
-                Style = (Style)FindResource("PhoneToggleSwitchStyle"),
-                IsChecked = isLoggerDarkMode,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(15, 0, 5, 0)
-            };
-
-            TextBlock lblLoggerTheme = new TextBlock
-            {
-                Text = isLoggerDarkMode ? "🌙 Nền Tối" : "☀️ Nền Sáng",
-                FontWeight = FontWeights.Bold,
-                FontSize = 12,
-                Foreground = isLoggerDarkMode ? MediaBrushes.White : (System.Windows.Media.Brush)bc.ConvertFrom("#333333"),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            toggleLoggerTheme.Content = lblLoggerTheme;
-
-            headerGrid.Children.Add(timerPanel);
-            Grid.SetColumn(timerPanel, 0);
-            headerGrid.Children.Add(toggleLoggerTheme);
-            Grid.SetColumn(toggleLoggerTheme, 1);
-
-            headerCard.Child = headerGrid;
-            Grid.SetRow(headerCard, 0);
-
-            // 2. KHUNG HIỂN THỊ BIỂU ĐỒ
-            Border chartCard = new Border
-            {
-                Background = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White,
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(15),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = 0.08 }
-            };
-
-            ScrollViewer scrollViewer = new ScrollViewer
-            {
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-            };
-
-            StackPanel chartStack = new StackPanel();
-
-            System.Windows.Media.Brush canvasBg = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#252526") : (System.Windows.Media.Brush)bc.ConvertFrom("#FAFAFA");
-
-            Canvas canvasWater = new Canvas { Height = 180, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16) };
-            Canvas canvasTemp = new Canvas { Height = 180, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16) };
-            Canvas canvasHum = new Canvas { Height = 180, Background = canvasBg, Margin = new Thickness(0, 0, 0, 5) };
-
-            chartStack.Children.Add(canvasWater);
-            chartStack.Children.Add(canvasTemp);
-            chartStack.Children.Add(canvasHum);
-
-            scrollViewer.Content = chartStack;
-            chartCard.Child = scrollViewer;
-            Grid.SetRow(chartCard, 1);
-
-            mainGrid.Children.Add(headerCard);
-            mainGrid.Children.Add(chartCard);
-            logWindow.Content = mainGrid;
-
-            // Cập nhật giao diện động theo nút gạt
-            Action applyThemeColors = () =>
-            {
-                System.Windows.Media.Brush bg = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#121212") : (System.Windows.Media.Brush)bc.ConvertFrom("#F4F6F9");
-                System.Windows.Media.Brush cardBg = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
-                System.Windows.Media.Brush cBg = isLoggerDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#252526") : (System.Windows.Media.Brush)bc.ConvertFrom("#FAFAFA");
-
-                logWindow.Background = bg;
-                headerCard.Background = cardBg;
-                chartCard.Background = cardBg;
-                canvasWater.Background = cBg;
-                canvasTemp.Background = cBg;
-                canvasHum.Background = cBg;
-
-                lblLoggerTheme.Text = isLoggerDarkMode ? "🌙 Nền Tối" : "☀️ Nền Sáng";
-                lblLoggerTheme.Foreground = isLoggerDarkMode ? MediaBrushes.White : (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-            };
-
-            // Hàm cập nhật dữ liệu và vẽ biểu đồ với danh xưng chính quy
-            Action<string> updateCharts = (mode) =>
-            {
-                DateTime now = DateTime.Now;
-                List<LogModel> filtered = new List<LogModel>();
-
-                if (mode == "DAY")
-                    filtered = allLogs.Where(x => x.Timestamp >= now.AddDays(-1)).ToList();
-                else if (mode == "WEEK")
-                    filtered = allLogs.Where(x => x.Timestamp >= now.AddDays(-7)).ToList();
-                else if (mode == "MONTH")
-                    filtered = allLogs.Where(x => x.Timestamp >= now.AddDays(-30)).ToList();
-
-                System.Windows.Media.Brush textBrush = isLoggerDarkMode ? MediaBrushes.White : (System.Windows.Media.Brush)bc.ConvertFrom("#212121");
-
-                // 1. Biểu đồ Mực nước - Cột màu xanh nước biển (#0288D1)
-                DrawBarChart(canvasWater, filtered.Select(x => x.WaterLevel).ToList(),
-                             filtered.Select(x => x.TimeStr).ToList(),
-                             "BIỂU ĐỒ GIÁM SÁT MỰC NƯỚC THEO THỜI GIAN THỰC (ĐƠN VỊ: CM)",
-                             (System.Windows.Media.Brush)bc.ConvertFrom("#0288D1"), 20.0, textBrush);
-
-                // 2. Biểu đồ Nhiệt độ - Đường màu đỏ (#D32F2F)
-                DrawLineChart(canvasTemp, filtered.Select(x => x.Temperature).ToList(),
-                              filtered.Select(x => x.TimeStr).ToList(),
-                              "BIỂU ĐỒ GIÁM SÁT NHIỆT ĐỘ MÔI TRƯỜNG (ĐƠN VỊ: °C)",
-                              (System.Windows.Media.Brush)bc.ConvertFrom("#D32F2F"), 50.0, textBrush);
-
-                // 3. Biểu đồ Độ ẩm - Đường màu xanh lá cây (#388E3C)
-                DrawLineChart(canvasHum, filtered.Select(x => x.Humidity).ToList(),
-                              filtered.Select(x => x.TimeStr).ToList(),
-                              "BIỂU ĐỒ GIÁM SÁT ĐỘ ẨM KHÔNG KHÍ (ĐƠN VỊ: %)",
-                              (System.Windows.Media.Brush)bc.ConvertFrom("#388E3C"), 100.0, textBrush);
-            };
-
-            btnDay.Click += (s, e) => updateCharts("DAY");
-            btnWeek.Click += (s, e) => updateCharts("WEEK");
-            btnMonth.Click += (s, e) => updateCharts("MONTH");
-
-            toggleLoggerTheme.Click += (s, e) =>
-            {
-                isLoggerDarkMode = toggleLoggerTheme.IsChecked ?? false;
-                applyThemeColors();
-                updateCharts("DAY");
-            };
-
-            logWindow.Loaded += (s, e) => updateCharts("DAY");
-            logWindow.ShowDialog();
-        }
-
-        // Tạo Button giao diện phẳng bo góc Modern UI
-        private Button CreateModernButton(string content, string hexColor)
+        public Button CreateModernButton(string content, string hexColor)
         {
             BrushConverter bc = new BrushConverter();
             Button btn = new Button
@@ -301,7 +100,7 @@ namespace WpfSensorApp
                 Width = 110,
                 Height = 34,
                 Margin = new Thickness(0, 0, 10, 0),
-                Background = (System.Windows.Media.Brush)bc.ConvertFrom(hexColor),
+                Background = (Brush)bc.ConvertFrom(hexColor),
                 Foreground = MediaBrushes.White,
                 FontWeight = FontWeights.SemiBold,
                 FontSize = 12,
@@ -325,145 +124,6 @@ namespace WpfSensorApp
             return btn;
         }
 
-        private List<LogModel> LoadLogData(string filePath)
-        {
-            var list = new List<LogModel>();
-            try
-            {
-                string[] lines = File.ReadAllLines(filePath, Encoding.UTF8);
-                for (int i = 1; i < lines.Length; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(lines[i])) continue;
-                    string[] parts = lines[i].Split(',');
-                    if (parts.Length >= 4)
-                    {
-                        if (DateTime.TryParseExact(parts[0].Trim(), "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dt))
-                        {
-                            double.TryParse(parts[1].Trim().Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double t);
-                            double.TryParse(parts[2].Trim().Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double h);
-                            double.TryParse(parts[3].Trim().Replace(',', '.'), NumberStyles.Any, CultureInfo.InvariantCulture, out double w);
-
-                            list.Add(new LogModel
-                            {
-                                Timestamp = dt,
-                                TimeStr = dt.ToString("HH:mm dd/MM"),
-                                Temperature = t,
-                                Humidity = h,
-                                WaterLevel = w
-                            });
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Lỗi đọc file log: {ex.Message}");
-            }
-            return list;
-        }
-
-        // HÀM VẼ BIỂU ĐỒ CỘT (BAR CHART - MỰC NƯỚC)
-        private void DrawBarChart(Canvas canvas, List<double> values, List<string> timeLabels, string title, System.Windows.Media.Brush barBrush, double maxY, System.Windows.Media.Brush textBrush)
-        {
-            canvas.Children.Clear();
-            double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 880;
-            double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 180;
-            double padLeft = 40, padBottom = 30, padTop = 30, padRight = 20;
-
-            // Tiêu đề biểu đồ chuẩn chính quy
-            TextBlock txtTitle = new TextBlock { Text = title, FontWeight = FontWeights.Bold, Foreground = textBrush, FontSize = 12 };
-            Canvas.SetLeft(txtTitle, 10);
-            Canvas.SetTop(txtTitle, 6);
-            canvas.Children.Add(txtTitle);
-
-            // Trục tọa độ
-            System.Windows.Shapes.Line xAxis = new System.Windows.Shapes.Line { X1 = padLeft, Y1 = height - padBottom, X2 = width - padRight, Y2 = height - padBottom, Stroke = MediaBrushes.Gray, StrokeThickness = 1 };
-            System.Windows.Shapes.Line yAxis = new System.Windows.Shapes.Line { X1 = padLeft, Y1 = padTop, X2 = padLeft, Y2 = height - padBottom, Stroke = MediaBrushes.Gray, StrokeThickness = 1 };
-            canvas.Children.Add(xAxis);
-            canvas.Children.Add(yAxis);
-
-            if (values == null || values.Count == 0) return;
-
-            double drawWidth = width - padLeft - padRight;
-            double drawHeight = height - padTop - padBottom;
-            int count = values.Count;
-            double barWidth = Math.Max(2, Math.Min(25, (drawWidth / count) - 4));
-
-            for (int i = 0; i < count; i++)
-            {
-                double val = Math.Min(maxY, Math.Max(0, values[i]));
-                double barHeight = (val / maxY) * drawHeight;
-                double x = padLeft + i * (drawWidth / count) + 2;
-                double y = height - padBottom - barHeight;
-
-                System.Windows.Shapes.Rectangle rect = new System.Windows.Shapes.Rectangle
-                {
-                    Width = barWidth,
-                    Height = barHeight,
-                    Fill = barBrush,
-                    ToolTip = $"Thời gian: {timeLabels[i]}\nMực nước: {values[i]:F1} cm"
-                };
-                Canvas.SetLeft(rect, (int)x);
-                Canvas.SetTop(rect, (int)y);
-                canvas.Children.Add(rect);
-            }
-        }
-
-        // HÀM VẼ BIỂU ĐỒ ĐƯỜNG (LINE CHART - NHIỆT ĐỘ & ĐỘ ẨM)
-        private void DrawLineChart(Canvas canvas, List<double> values, List<string> timeLabels, string title, System.Windows.Media.Brush lineBrush, double maxY, System.Windows.Media.Brush textBrush)
-        {
-            canvas.Children.Clear();
-            double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 880;
-            double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 180;
-            double padLeft = 40, padBottom = 30, padTop = 30, padRight = 20;
-
-            // Tiêu đề biểu đồ chuẩn chính quy
-            TextBlock txtTitle = new TextBlock { Text = title, FontWeight = FontWeights.Bold, Foreground = textBrush, FontSize = 12 };
-            Canvas.SetLeft(txtTitle, 10);
-            Canvas.SetTop(txtTitle, 6);
-            canvas.Children.Add(txtTitle);
-
-            // Trục tọa độ
-            System.Windows.Shapes.Line xAxis = new System.Windows.Shapes.Line { X1 = padLeft, Y1 = height - padBottom, X2 = width - padRight, Y2 = height - padBottom, Stroke = MediaBrushes.Gray, StrokeThickness = 1 };
-            System.Windows.Shapes.Line yAxis = new System.Windows.Shapes.Line { X1 = padLeft, Y1 = padTop, X2 = padLeft, Y2 = height - padBottom, Stroke = MediaBrushes.Gray, StrokeThickness = 1 };
-            canvas.Children.Add(xAxis);
-            canvas.Children.Add(yAxis);
-
-            if (values == null || values.Count == 0) return;
-
-            double drawWidth = width - padLeft - padRight;
-            double drawHeight = height - padTop - padBottom;
-            int count = values.Count;
-
-            System.Windows.Shapes.Polyline polyline = new System.Windows.Shapes.Polyline { Stroke = lineBrush, StrokeThickness = 2 };
-            System.Windows.Media.PointCollection points = new System.Windows.Media.PointCollection();
-
-            for (int i = 0; i < count; i++)
-            {
-                double val = Math.Min(maxY, Math.Max(0, values[i]));
-                double x = padLeft + (count == 1 ? drawWidth / 2 : i * (drawWidth / (count - 1)));
-                double y = height - padBottom - (val / maxY) * drawHeight;
-
-                points.Add(new System.Windows.Point(x, y));
-
-                System.Windows.Shapes.Ellipse dot = new System.Windows.Shapes.Ellipse
-                {
-                    Width = 6,
-                    Height = 6,
-                    Fill = lineBrush,
-                    ToolTip = $"Thời gian: {timeLabels[i]}\nGiá trị: {values[i]:F1}"
-                };
-                Canvas.SetLeft(dot, x - 3);
-                Canvas.SetTop(dot, y - 3);
-                canvas.Children.Add(dot);
-            }
-
-            polyline.Points = points;
-            canvas.Children.Add(polyline);
-        }
-
-        #endregion
-
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             LoadComPorts();
@@ -471,7 +131,7 @@ namespace WpfSensorApp
 
             Dispatcher.BeginInvoke(new Action(() => {
                 UpdateDangerBar();
-            }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }), DispatcherPriority.Loaded);
         }
 
         private void UpdateDangerBar()
@@ -498,12 +158,12 @@ namespace WpfSensorApp
             if (_isViewActive)
             {
                 btnView.Content = "👁️ View";
-                btnView.Background = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FFE53935");
+                btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FFE53935");
             }
             else
             {
                 btnView.Content = "👁️ View";
-                btnView.Background = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF2196F3");
+                btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FF2196F3");
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -511,8 +171,8 @@ namespace WpfSensorApp
                     ViewModel.DangerLevel = "0/10";
 
                     BrushConverter bc = new BrushConverter();
-                    ViewModel.WaterLevelColor = (System.Windows.Media.Brush)bc.ConvertFrom("#FF0288D1");
-                    ViewModel.WaterLevelBgColor = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#0F2D3C") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFE1F5FE");
+                    ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
+                    ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
 
                     _currentScaleRatio = 0.0;
                     UpdateDangerBar();
@@ -533,8 +193,8 @@ namespace WpfSensorApp
             _isBlinkStateToggle = !_isBlinkStateToggle;
             BrushConverter bc = new BrushConverter();
 
-            System.Windows.Media.Brush redBrush = (System.Windows.Media.Brush)bc.ConvertFrom("#FFE53935");
-            System.Windows.Media.Brush whiteBrush = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
+            Brush redBrush = (Brush)bc.ConvertFrom("#FFE53935");
+            Brush whiteBrush = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
 
             if (_isTempAlarm)
             {
@@ -542,7 +202,7 @@ namespace WpfSensorApp
             }
             else
             {
-                cardTemp.Background = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E2A1E") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardTemp.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
             }
 
             if (_isHumAlarm)
@@ -551,10 +211,10 @@ namespace WpfSensorApp
             }
             else
             {
-                cardHum.Background = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E2A1E") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardHum.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
             }
 
-            cardDanger.Background = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E") : (System.Windows.Media.Brush)bc.ConvertFrom("#FAFAFA");
+            cardDanger.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : (Brush)bc.ConvertFrom("#FAFAFA");
         }
 
         private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
@@ -642,7 +302,7 @@ namespace WpfSensorApp
 
             if (isDark)
             {
-                this.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#121212");
+                this.Background = (Brush)bc.ConvertFrom("#121212");
                 grpSerial.Foreground = MediaBrushes.White;
                 lblComPort.Foreground = MediaBrushes.White;
                 lblDarkMode.Foreground = MediaBrushes.White;
@@ -652,35 +312,35 @@ namespace WpfSensorApp
                 if (lblHumThreshold != null) lblHumThreshold.Foreground = MediaBrushes.White;
                 if (lblWaterThreshold != null) lblWaterThreshold.Foreground = MediaBrushes.White;
 
-                cardHum.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#1E2A1E");
-                cardDanger.BorderBrush = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                cardCamera.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#251A2C");
-                cardCamera.BorderBrush = (System.Windows.Media.Brush)bc.ConvertFrom("#4A154B");
+                cardHum.Background = (Brush)bc.ConvertFrom("#1E2A1E");
+                cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#333333");
+                cardCamera.Background = (Brush)bc.ConvertFrom("#251A2C");
+                cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#4A154B");
 
-                rectUnfilledOverlay.Fill = (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E");
+                rectUnfilledOverlay.Fill = (Brush)bc.ConvertFrom("#1E1E1E");
                 txtDangerLevel.Foreground = MediaBrushes.White;
-                sbStatus.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#1E1E1E");
+                sbStatus.Background = (Brush)bc.ConvertFrom("#1E1E1E");
             }
             else
             {
                 this.Background = MediaBrushes.White;
-                grpSerial.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                lblComPort.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                lblDarkMode.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
+                grpSerial.Foreground = (Brush)bc.ConvertFrom("#333333");
+                lblComPort.Foreground = (Brush)bc.ConvertFrom("#333333");
+                lblDarkMode.Foreground = (Brush)bc.ConvertFrom("#333333");
 
-                if (grpThresholds != null) grpThresholds.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                if (lblTempThreshold != null) lblTempThreshold.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                if (lblHumThreshold != null) lblHumThreshold.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                if (lblWaterThreshold != null) lblWaterThreshold.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
+                if (grpThresholds != null) grpThresholds.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (lblTempThreshold != null) lblTempThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (lblHumThreshold != null) lblHumThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (lblWaterThreshold != null) lblWaterThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
 
-                cardHum.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#FFE8F5E9");
-                cardDanger.BorderBrush = (System.Windows.Media.Brush)bc.ConvertFrom("#E0E0E0");
-                cardCamera.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#FFF3E5F5");
-                cardCamera.BorderBrush = (System.Windows.Media.Brush)bc.ConvertFrom("#FFCE93D8");
+                cardHum.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#E0E0E0");
+                cardCamera.Background = (Brush)bc.ConvertFrom("#FFF3E5F5");
+                cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#FFCE93D8");
 
-                rectUnfilledOverlay.Fill = (System.Windows.Media.Brush)bc.ConvertFrom("#FAFAFA");
-                txtDangerLevel.Foreground = (System.Windows.Media.Brush)bc.ConvertFrom("#333333");
-                sbStatus.Background = (System.Windows.Media.Brush)bc.ConvertFrom("#FFF5F5F5");
+                rectUnfilledOverlay.Fill = (Brush)bc.ConvertFrom("#FAFAFA");
+                txtDangerLevel.Foreground = (Brush)bc.ConvertFrom("#333333");
+                sbStatus.Background = (Brush)bc.ConvertFrom("#FFF5F5F5");
             }
         }
 
@@ -819,7 +479,7 @@ namespace WpfSensorApp
                 Height = 550,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = this,
-                Background = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#121212")
+                Background = (Brush)new BrushConverter().ConvertFrom("#121212")
             };
 
             Grid mainGrid = new Grid { Margin = new Thickness(10) };
@@ -828,12 +488,12 @@ namespace WpfSensorApp
 
             GroupBox grpOriginal = new GroupBox
             {
-                Header = "📷 ÁNH GỐC CAMERA (BỊ NGHIÊNG)",
+                Header = "📷 ẢNH GỐC CAMERA (BỊ NGHIÊNG)",
                 Foreground = MediaBrushes.OrangeRed,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(5)
             };
-            System.Windows.Controls.Image imgOrigControl = new System.Windows.Controls.Image
+            Image imgOrigControl = new Image
             {
                 Source = origImg,
                 Stretch = Stretch.Uniform,
@@ -844,12 +504,12 @@ namespace WpfSensorApp
 
             GroupBox grpCorrected = new GroupBox
             {
-                Header = "✨ ÁNH ĐÃ HIỆU CHỈNH (PERSPECTIVE CORRECTION)",
+                Header = "✨ ẢNH ĐÃ HIỆU CHỈNH (PERSPECTIVE CORRECTION)",
                 Foreground = MediaBrushes.LimeGreen,
                 FontWeight = FontWeights.Bold,
                 Margin = new Thickness(5)
             };
-            System.Windows.Controls.Image imgCorrectedControl = new System.Windows.Controls.Image
+            Image imgCorrectedControl = new Image
             {
                 Source = correctedImg,
                 Stretch = Stretch.Uniform,
@@ -918,23 +578,23 @@ namespace WpfSensorApp
 
                             if (scaleLevel >= 8.0)
                             {
-                                ViewModel.WaterLevelColor = (System.Windows.Media.Brush)bc.ConvertFrom("#FFE53935");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#3E0F0F") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFFFEBEE");
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E0F0F") : (Brush)bc.ConvertFrom("#FFFFEBEE");
                             }
                             else if (scaleLevel >= 5.0)
                             {
-                                ViewModel.WaterLevelColor = (System.Windows.Media.Brush)bc.ConvertFrom("#FFF57F17");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#3E2E04") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFFDE0B2");
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E2E04") : (Brush)bc.ConvertFrom("#FFFDE0B2");
                             }
                             else if (scaleLevel >= 2.5)
                             {
-                                ViewModel.WaterLevelColor = (System.Windows.Media.Brush)bc.ConvertFrom("#FF4CAF50");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#0F3E18") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFE8F5E9");
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F3E18") : (Brush)bc.ConvertFrom("#FFE8F5E9");
                             }
                             else
                             {
-                                ViewModel.WaterLevelColor = (System.Windows.Media.Brush)bc.ConvertFrom("#FF0288D1");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (System.Windows.Media.Brush)bc.ConvertFrom("#0F2D3C") : (System.Windows.Media.Brush)bc.ConvertFrom("#FFE1F5FE");
+                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
                             }
 
                             UpdateDangerBar();
@@ -1176,8 +836,11 @@ namespace WpfSensorApp
         {
             try
             {
-                string line = _serialPort.ReadLine().Trim();
-                Dispatcher.BeginInvoke(new Action(() => ParseAndDisplayData(line)));
+                if (_serialPort.IsOpen)
+                {
+                    string line = _serialPort.ReadLine().Trim();
+                    Dispatcher.BeginInvoke(new Action(() => ParseAndDisplayData(line)));
+                }
             }
             catch (Exception ex)
             {
@@ -1219,16 +882,20 @@ namespace WpfSensorApp
         {
             _sensorLogger?.Stop();
             if (_blinkTimer != null) _blinkTimer.Stop();
+
             if (_capture != null)
             {
+                _capture.ImageGrabbed -= ProcessFrame;
                 _capture.Stop();
                 _capture.Dispose();
             }
-            if (_serialPort != null && _serialPort.IsOpen)
+
+            if (_serialPort != null)
             {
-                _serialPort.Close();
+                if (_serialPort.IsOpen) _serialPort.Close();
                 _serialPort.Dispose();
             }
+
             base.OnClosed(e);
         }
     }
