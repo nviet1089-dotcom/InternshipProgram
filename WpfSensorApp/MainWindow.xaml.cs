@@ -1,5 +1,4 @@
-﻿#nullable disable
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -25,7 +24,7 @@ namespace WpfSensorApp
     public partial class MainWindow : Window
     {
         private SerialPort _serialPort;
-        private VideoCapture _capture;
+        private VideoCapture? _capture;
         private SensorLogger _sensorLogger;
 
         private bool _isGrayscale = false;
@@ -60,11 +59,11 @@ namespace WpfSensorApp
         private bool _isHumAlarm = false;
         private bool _isWaterAlarm = false;
 
-        private DispatcherTimer _blinkTimer;
+        private DispatcherTimer? _blinkTimer;
         private bool _isBlinkStateToggle = false;
 
-        private readonly Brush _colorGreen = (Brush)new BrushConverter().ConvertFrom("#FF4CAF50");
-        private readonly Brush _colorRed = (Brush)new BrushConverter().ConvertFrom("#FFE53935");
+        private readonly Brush _colorGreen = (Brush)(new BrushConverter().ConvertFrom("#FF4CAF50") ?? Brushes.Green);
+        private readonly Brush _colorRed = (Brush)(new BrushConverter().ConvertFrom("#FFE53935") ?? Brushes.Red);
 
         public MainViewModel ViewModel { get; set; } = new MainViewModel();
 
@@ -100,7 +99,7 @@ namespace WpfSensorApp
                 Width = 110,
                 Height = 34,
                 Margin = new Thickness(0, 0, 10, 0),
-                Background = (Brush)bc.ConvertFrom(hexColor),
+                Background = (Brush)(bc.ConvertFrom(hexColor) ?? Brushes.Blue),
                 Foreground = MediaBrushes.White,
                 FontWeight = FontWeights.SemiBold,
                 FontSize = 12,
@@ -158,12 +157,12 @@ namespace WpfSensorApp
             if (_isViewActive)
             {
                 btnView.Content = "👁️ View";
-                btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FFE53935");
+                btnView.Background = (Brush)(new BrushConverter().ConvertFrom("#FFE53935") ?? Brushes.Red);
             }
             else
             {
                 btnView.Content = "👁️ View";
-                btnView.Background = (Brush)new BrushConverter().ConvertFrom("#FF2196F3");
+                btnView.Background = (Brush)(new BrushConverter().ConvertFrom("#FF2196F3") ?? Brushes.Blue);
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
@@ -171,8 +170,8 @@ namespace WpfSensorApp
                     ViewModel.DangerLevel = "0/10";
 
                     BrushConverter bc = new BrushConverter();
-                    ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
-                    ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
+                    ViewModel.WaterLevelColor = (Brush)(bc.ConvertFrom("#FF0288D1") ?? Brushes.Blue);
+                    ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)(bc.ConvertFrom("#0F2D3C") ?? Brushes.DarkBlue) : (Brush)(bc.ConvertFrom("#FFE1F5FE") ?? Brushes.LightBlue);
 
                     _currentScaleRatio = 0.0;
                     UpdateDangerBar();
@@ -188,13 +187,13 @@ namespace WpfSensorApp
             _blinkTimer.Start();
         }
 
-        private void BlinkTimer_Tick(object sender, EventArgs e)
+        private void BlinkTimer_Tick(object? sender, EventArgs e)
         {
             _isBlinkStateToggle = !_isBlinkStateToggle;
             BrushConverter bc = new BrushConverter();
 
-            Brush redBrush = (Brush)bc.ConvertFrom("#FFE53935");
-            Brush whiteBrush = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : MediaBrushes.White;
+            Brush redBrush = (Brush)(bc.ConvertFrom("#FFE53935") ?? Brushes.Red);
+            Brush whiteBrush = _isDarkMode ? (Brush)(bc.ConvertFrom("#1E1E1E") ?? Brushes.Black) : MediaBrushes.White;
 
             if (_isTempAlarm)
             {
@@ -202,7 +201,7 @@ namespace WpfSensorApp
             }
             else
             {
-                cardTemp.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardTemp.Background = _isDarkMode ? (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen) : (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
             }
 
             if (_isHumAlarm)
@@ -211,10 +210,10 @@ namespace WpfSensorApp
             }
             else
             {
-                cardHum.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E2A1E") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+                cardHum.Background = _isDarkMode ? (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen) : (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
             }
 
-            cardDanger.Background = _isDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : (Brush)bc.ConvertFrom("#FAFAFA");
+            cardDanger.Background = _isDarkMode ? (Brush)(bc.ConvertFrom("#1E1E1E") ?? Brushes.Black) : (Brush)(bc.ConvertFrom("#FAFAFA") ?? Brushes.White);
         }
 
         private void txtThreshold_TextChanged(object sender, TextChangedEventArgs e)
@@ -290,11 +289,14 @@ namespace WpfSensorApp
             btnToggleOverlay.Background = _showOverlay ? _colorRed : _colorGreen;
         }
 
-        private void toggleDarkMode_Click(object sender, RoutedEventArgs e)
-        {
-            _isDarkMode = toggleDarkMode.IsChecked ?? false;
-            ApplyTheme(_isDarkMode);
-        }
+       private void toggleDarkMode_Click(object sender, RoutedEventArgs e)
+{
+    if (sender is CheckBox toggle)
+    {
+        _isDarkMode = toggle.IsChecked ?? false;
+        ApplyTheme(_isDarkMode);
+    }
+}
 
         private void ApplyTheme(bool isDark)
         {
@@ -302,7 +304,7 @@ namespace WpfSensorApp
 
             if (isDark)
             {
-                this.Background = (Brush)bc.ConvertFrom("#121212");
+                this.Background = (Brush)(bc.ConvertFrom("#121212") ?? Brushes.Black);
                 grpSerial.Foreground = MediaBrushes.White;
                 lblComPort.Foreground = MediaBrushes.White;
                 lblDarkMode.Foreground = MediaBrushes.White;
@@ -312,35 +314,35 @@ namespace WpfSensorApp
                 if (lblHumThreshold != null) lblHumThreshold.Foreground = MediaBrushes.White;
                 if (lblWaterThreshold != null) lblWaterThreshold.Foreground = MediaBrushes.White;
 
-                cardHum.Background = (Brush)bc.ConvertFrom("#1E2A1E");
-                cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#333333");
-                cardCamera.Background = (Brush)bc.ConvertFrom("#251A2C");
-                cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#4A154B");
+                cardHum.Background = (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen);
+                cardDanger.BorderBrush = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Gray);
+                cardCamera.Background = (Brush)(bc.ConvertFrom("#251A2C") ?? Brushes.Purple);
+                cardCamera.BorderBrush = (Brush)(bc.ConvertFrom("#4A154B") ?? Brushes.Purple);
 
-                rectUnfilledOverlay.Fill = (Brush)bc.ConvertFrom("#1E1E1E");
+                rectUnfilledOverlay.Fill = (Brush)(bc.ConvertFrom("#1E1E1E") ?? Brushes.DarkGray);
                 txtDangerLevel.Foreground = MediaBrushes.White;
-                sbStatus.Background = (Brush)bc.ConvertFrom("#1E1E1E");
+                sbStatus.Background = (Brush)(bc.ConvertFrom("#1E1E1E") ?? Brushes.DarkGray);
             }
             else
             {
                 this.Background = MediaBrushes.White;
-                grpSerial.Foreground = (Brush)bc.ConvertFrom("#333333");
-                lblComPort.Foreground = (Brush)bc.ConvertFrom("#333333");
-                lblDarkMode.Foreground = (Brush)bc.ConvertFrom("#333333");
+                grpSerial.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
+                lblComPort.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
+                lblDarkMode.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
 
-                if (grpThresholds != null) grpThresholds.Foreground = (Brush)bc.ConvertFrom("#333333");
-                if (lblTempThreshold != null) lblTempThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
-                if (lblHumThreshold != null) lblHumThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
-                if (lblWaterThreshold != null) lblWaterThreshold.Foreground = (Brush)bc.ConvertFrom("#333333");
+                if (grpThresholds != null) grpThresholds.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
+                if (lblTempThreshold != null) lblTempThreshold.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
+                if (lblHumThreshold != null) lblHumThreshold.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
+                if (lblWaterThreshold != null) lblWaterThreshold.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
 
-                cardHum.Background = (Brush)bc.ConvertFrom("#FFE8F5E9");
-                cardDanger.BorderBrush = (Brush)bc.ConvertFrom("#E0E0E0");
-                cardCamera.Background = (Brush)bc.ConvertFrom("#FFF3E5F5");
-                cardCamera.BorderBrush = (Brush)bc.ConvertFrom("#FFCE93D8");
+                cardHum.Background = (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
+                cardDanger.BorderBrush = (Brush)(bc.ConvertFrom("#E0E0E0") ?? Brushes.LightGray);
+                cardCamera.Background = (Brush)(bc.ConvertFrom("#FFF3E5F5") ?? Brushes.Lavender);
+                cardCamera.BorderBrush = (Brush)(bc.ConvertFrom("#FFCE93D8") ?? Brushes.Violet);
 
-                rectUnfilledOverlay.Fill = (Brush)bc.ConvertFrom("#FAFAFA");
-                txtDangerLevel.Foreground = (Brush)bc.ConvertFrom("#333333");
-                sbStatus.Background = (Brush)bc.ConvertFrom("#FFF5F5F5");
+                rectUnfilledOverlay.Fill = (Brush)(bc.ConvertFrom("#FAFAFA") ?? Brushes.WhiteSmoke);
+                txtDangerLevel.Foreground = (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
+                sbStatus.Background = (Brush)(bc.ConvertFrom("#FFF5F5F5") ?? Brushes.WhiteSmoke);
             }
         }
 
@@ -479,7 +481,7 @@ namespace WpfSensorApp
                 Height = 550,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = this,
-                Background = (Brush)new BrushConverter().ConvertFrom("#121212")
+                Background = (Brush)(new BrushConverter().ConvertFrom("#121212") ?? Brushes.Black)
             };
 
             Grid mainGrid = new Grid { Margin = new Thickness(10) };
@@ -535,7 +537,7 @@ namespace WpfSensorApp
             }
         }
 
-        private void ProcessFrame(object sender, EventArgs e)
+        private void ProcessFrame(object? sender, EventArgs e)
         {
             if (_capture == null || !_capture.IsOpened) return;
 
@@ -578,23 +580,23 @@ namespace WpfSensorApp
 
                             if (scaleLevel >= 8.0)
                             {
-                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFE53935");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E0F0F") : (Brush)bc.ConvertFrom("#FFFFEBEE");
+                                ViewModel.WaterLevelColor = (Brush)(bc.ConvertFrom("#FFE53935") ?? Brushes.Red);
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)(bc.ConvertFrom("#3E0F0F") ?? Brushes.DarkRed) : (Brush)(bc.ConvertFrom("#FFFFEBEE") ?? Brushes.MistyRose);
                             }
                             else if (scaleLevel >= 5.0)
                             {
-                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FFF57F17");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#3E2E04") : (Brush)bc.ConvertFrom("#FFFDE0B2");
+                                ViewModel.WaterLevelColor = (Brush)(bc.ConvertFrom("#FFF57F17") ?? Brushes.Orange);
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)(bc.ConvertFrom("#3E2E04") ?? Brushes.DarkGoldenrod) : (Brush)(bc.ConvertFrom("#FFFDE0B2") ?? Brushes.LightYellow);
                             }
                             else if (scaleLevel >= 2.5)
                             {
-                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF4CAF50");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F3E18") : (Brush)bc.ConvertFrom("#FFE8F5E9");
+                                ViewModel.WaterLevelColor = (Brush)(bc.ConvertFrom("#FF4CAF50") ?? Brushes.Green);
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)(bc.ConvertFrom("#0F3E18") ?? Brushes.DarkGreen) : (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
                             }
                             else
                             {
-                                ViewModel.WaterLevelColor = (Brush)bc.ConvertFrom("#FF0288D1");
-                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)bc.ConvertFrom("#0F2D3C") : (Brush)bc.ConvertFrom("#FFE1F5FE");
+                                ViewModel.WaterLevelColor = (Brush)(bc.ConvertFrom("#FF0288D1") ?? Brushes.Blue);
+                                ViewModel.WaterLevelBgColor = _isDarkMode ? (Brush)(bc.ConvertFrom("#0F2D3C") ?? Brushes.DarkBlue) : (Brush)(bc.ConvertFrom("#FFE1F5FE") ?? Brushes.LightBlue);
                             }
 
                             UpdateDangerBar();
@@ -795,7 +797,7 @@ namespace WpfSensorApp
             if (cboComPorts.SelectedItem == null) return;
             try
             {
-                _serialPort.PortName = cboComPorts.SelectedItem.ToString();
+                _serialPort.PortName = cboComPorts.SelectedItem.ToString() ?? "";
                 _serialPort.BaudRate = 9600;
                 _serialPort.Open();
 

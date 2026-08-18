@@ -1,4 +1,3 @@
-#nullable disable
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
@@ -13,8 +12,8 @@ namespace WpfSensorApp
         private string _dangerLevel = "0/10";
         private string _statusText = "Trạng thái: Sẵn sàng";
         private Brush _statusColor = Brushes.Gray;
-        private Brush _waterLevelColor = (Brush)new BrushConverter().ConvertFrom("#FF0288D1");
-        private Brush _waterLevelBgColor = (Brush)new BrushConverter().ConvertFrom("#FFE1F5FE");
+        private Brush _waterLevelColor = (Brush)(new BrushConverter().ConvertFrom("#FF0288D1") ?? Brushes.Cyan);
+        private Brush _waterLevelBgColor = (Brush)(new BrushConverter().ConvertFrom("#FFE1F5FE") ?? Brushes.LightCyan);
 
         public string Temperature
         {
@@ -64,9 +63,9 @@ namespace WpfSensorApp
             set { _waterLevelBgColor = value; OnPropertyChanged(); }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

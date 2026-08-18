@@ -64,11 +64,11 @@ Tài liệu này chứa toàn bộ lộ trình học tập lý thuyết, bài t�
 
 | Ngày | Công việc triển khai chi tiết | Trạng thái | Tài liệu / Source Code |
 | :---: | :--- | :---: | :--- |
-| **Day 25** | Thiết kế ô nhập "Ngưỡng cảnh báo" (Threshold) cho Nhiệt độ và Mực nước trực tiếp trên giao diện C# App. | 🔄 `In Progress  | [Link]() |
-| **Day 26** | Viết logic so sánh liên tục dữ liệu đo (từ Arduino và từ Vision) với Ngưỡng cài đặt. Nếu vượt ngưỡng, kích hoạt trạng thái báo động. | 🔄 `In Progress | [Link]() |
-| **Day 27** | Lập trình hiệu ứng giao diện: **Nhấp nháy Đỏ/Trắng** tại vùng cảnh báo để thu hút sự chú ý của người dùng. | ⬜ ToDo | [Link]() |
-| **Day 28** | Tích hợp tính năng tự động: Khi có Cảnh báo đỏ, ứng dụng tự động chụp lại một bức ảnh từ Webcam (Snapshot) lưu vào máy tính để lưu vết. | ⬜ ToDo | [Link]() |
-| **Day 29** | Thiết lập truyền thông ngược: C# gửi lệnh xuống Arduino để bật còi Buzzer hoặc đèn LED cảnh báo vật lý trên bo mạch khi phần mềm báo động. | ⬜ ToDo | [Link]() |
+| **Day 25** | Thiết kế ô nhập "Ngưỡng cảnh báo" (Threshold) cho Nhiệt độ và Mực nước trực tiếp trên giao diện C# App. | ✅ `Done`  | [Link]() |
+| **Day 26** | Viết logic so sánh liên tục dữ liệu đo (từ Arduino và từ Vision) với Ngưỡng cài đặt. Nếu vượt ngưỡng, kích hoạt trạng thái báo động. | ✅ `Done` | [Link]() |
+| **Day 27** | Lập trình hiệu ứng giao diện: **Nhấp nháy Đỏ/Trắng** tại vùng cảnh báo để thu hút sự chú ý của người dùng. | ✅ `Done`  | [Link]() |
+| **Day 28** | Tích hợp tính năng tự động: Khi có Cảnh báo đỏ, ứng dụng tự động chụp lại một bức ảnh từ Webcam (Snapshot) lưu vào máy tính để lưu vết. | 🔄 `In Progress| [Link]() |
+| **Day 29** | Thiết lập truyền thông ngược: C# gửi lệnh xuống Arduino để bật còi Buzzer hoặc đèn LED cảnh báo vật lý trên bo mạch khi phần mềm báo động. | 🔄 `In Progress| [Link]() |
 
 ### 📊 Tuần 7: Hoàn thiện Hệ thống, Ghi dữ liệu & Đóng gói
 

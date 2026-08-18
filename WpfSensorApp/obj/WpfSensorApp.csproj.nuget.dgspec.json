@@ -30,6 +30,9 @@
           }
         },
         "warningProperties": {
+          "noWarn": [
+            "NU1510"
+          ],
           "warnAsError": [
             "NU1605"
           ]
@@ -48,23 +51,19 @@
           "dependencies": {
             "Emgu.CV": {
               "target": "Package",
-              "version": "[4.13.0.5924, )"
-            },
-            "Emgu.CV.Bitmap": {
-              "target": "Package",
-              "version": "[4.13.0.5924, )"
+              "version": "[4.9.0.5494, )"
             },
             "Emgu.CV.runtime.windows": {
               "target": "Package",
-              "version": "[4.13.0.5924, )"
+              "version": "[4.9.0.5494, )"
             },
             "System.Drawing.Common": {
               "target": "Package",
-              "version": "[10.0.10, )"
+              "version": "[8.0.0, )"
             },
             "System.IO.Ports": {
               "target": "Package",
-              "version": "[10.0.10, )"
+              "version": "[8.0.0, )"
             }
           },
           "imports": [

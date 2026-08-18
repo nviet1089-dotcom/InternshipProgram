@@ -8,7 +8,7 @@ namespace WpfSensorApp
     public class SensorLogger
     {
         private readonly Func<(string Temp, string Hum, string Water)> _getDataDelegate;
-        private DispatcherTimer _logTimer;
+        private DispatcherTimer? _logTimer;
         private readonly string _logFolderPath;
         private readonly string _logFilePath;
 

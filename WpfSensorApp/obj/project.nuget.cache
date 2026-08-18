@@ -1,47 +1,22 @@
 {
   "version": 2,
-  "dgSpecHash": "erDhpFcZFQM=",
+  "dgSpecHash": "DF78mbRe+Q0=",
   "success": true,
   "projectFilePath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\WpfSensorApp\\WpfSensorApp.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.cv\\4.13.0.5924\\emgu.cv.4.13.0.5924.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.cv.bitmap\\4.13.0.5924\\emgu.cv.bitmap.4.13.0.5924.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.cv.runtime.windows\\4.13.0.5924\\emgu.cv.runtime.windows.4.13.0.5924.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.arm64\\19.44.35224\\emgu.runtime.windows.msvc.rt.arm64.19.44.35224.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.x64\\19.44.35224\\emgu.runtime.windows.msvc.rt.x64.19.44.35224.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.x86\\19.44.35224\\emgu.runtime.windows.msvc.rt.x86.19.44.35224.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.android-arm.runtime.native.system.io.ports\\10.0.10\\runtime.android-arm.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.android-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.android-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.android-x64.runtime.native.system.io.ports\\10.0.10\\runtime.android-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.android-x86.runtime.native.system.io.ports\\10.0.10\\runtime.android-x86.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-arm.runtime.native.system.io.ports\\10.0.10\\runtime.linux-arm.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.linux-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-bionic-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.linux-bionic-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-bionic-x64.runtime.native.system.io.ports\\10.0.10\\runtime.linux-bionic-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-musl-arm.runtime.native.system.io.ports\\10.0.10\\runtime.linux-musl-arm.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-musl-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.linux-musl-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-musl-x64.runtime.native.system.io.ports\\10.0.10\\runtime.linux-musl-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-x64.runtime.native.system.io.ports\\10.0.10\\runtime.linux-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.maccatalyst-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.maccatalyst-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.maccatalyst-x64.runtime.native.system.io.ports\\10.0.10\\runtime.maccatalyst-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.native.system.io.ports\\10.0.10\\runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.osx-arm64.runtime.native.system.io.ports\\10.0.10\\runtime.osx-arm64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\10.0.10\\runtime.osx-x64.runtime.native.system.io.ports.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\system.drawing.common\\10.0.10\\system.drawing.common.10.0.10.nupkg.sha512",
-    "C:\\Users\\surface laptop\\.nuget\\packages\\system.io.ports\\10.0.10\\system.io.ports.10.0.10.nupkg.sha512"
+    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.cv\\4.9.0.5494\\emgu.cv.4.9.0.5494.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.cv.runtime.windows\\4.9.0.5494\\emgu.cv.runtime.windows.4.9.0.5494.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.arm64\\19.39.33523\\emgu.runtime.windows.msvc.rt.arm64.19.39.33523.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.x64\\19.39.33523\\emgu.runtime.windows.msvc.rt.x64.19.39.33523.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\emgu.runtime.windows.msvc.rt.x86\\19.39.33523\\emgu.runtime.windows.msvc.rt.x86.19.39.33523.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-arm.runtime.native.system.io.ports\\8.0.0\\runtime.linux-arm.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-arm64.runtime.native.system.io.ports\\8.0.0\\runtime.linux-arm64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.linux-x64.runtime.native.system.io.ports\\8.0.0\\runtime.linux-x64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.native.system.io.ports\\8.0.0\\runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.osx-arm64.runtime.native.system.io.ports\\8.0.0\\runtime.osx-arm64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\runtime.osx-x64.runtime.native.system.io.ports\\8.0.0\\runtime.osx-x64.runtime.native.system.io.ports.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\system.drawing.common\\8.0.0\\system.drawing.common.8.0.0.nupkg.sha512",
+    "C:\\Users\\surface laptop\\.nuget\\packages\\system.io.ports\\8.0.0\\system.io.ports.8.0.0.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1510",
-      "level": "Warning",
-      "message": "PackageReference System.Drawing.Common will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
-      "projectPath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\WpfSensorApp\\WpfSensorApp.csproj",
-      "warningLevel": 1,
-      "filePath": "C:\\Users\\surface laptop\\Documents\\clone github cua mentor\\InternshipProgram\\WpfSensorApp\\WpfSensorApp.csproj",
-      "libraryId": "System.Drawing.Common",
-      "targetGraphs": [
-        "net10.0-windows7.0"
-      ]
-    }
-  ]
+  "logs": []
 }

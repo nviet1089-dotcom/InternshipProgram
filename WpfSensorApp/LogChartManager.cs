@@ -35,7 +35,7 @@ namespace WpfSensorApp
                 Height = 800,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = ownerWindow,
-                Background = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#121212") : (Brush)bc.ConvertFrom("#F4F6F9")
+                Background = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#121212" : "#F4F6F9") ?? Brushes.White)
             };
 
             Grid mainGrid = new Grid { Margin = new Thickness(16) };
@@ -45,7 +45,7 @@ namespace WpfSensorApp
             // 1. KHUNG CHỨA 3 NÚT LỌC VÀ NÚT ĐỔI THEME
             Border headerCard = new Border
             {
-                Background = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : Brushes.White,
+                Background = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#1E1E1E" : "#FFFFFF") ?? Brushes.White),
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(12, 10, 12, 10),
                 Margin = new Thickness(0, 0, 0, 12),
@@ -97,7 +97,7 @@ namespace WpfSensorApp
                 Text = isLoggerDarkMode ? "🌙 Nền Tối" : "☀️ Nền Sáng",
                 FontWeight = FontWeights.Bold,
                 FontSize = 12,
-                Foreground = isLoggerDarkMode ? Brushes.White : (Brush)bc.ConvertFrom("#333333"),
+                Foreground = isLoggerDarkMode ? Brushes.White : (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black),
                 VerticalAlignment = VerticalAlignment.Center
             };
             toggleLoggerTheme.Content = lblLoggerTheme;
@@ -113,7 +113,7 @@ namespace WpfSensorApp
             // 2. KHUNG HIỂN THỊ BIỂU ĐỒ
             Border chartCard = new Border
             {
-                Background = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : Brushes.White,
+                Background = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#1E1E1E" : "#FFFFFF") ?? Brushes.White),
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(15),
                 Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 10, ShadowDepth = 2, Opacity = 0.08 }
@@ -126,7 +126,7 @@ namespace WpfSensorApp
             };
 
             StackPanel chartStack = new StackPanel();
-            Brush canvasBg = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#252526") : (Brush)bc.ConvertFrom("#FAFAFA");
+            Brush canvasBg = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#252526" : "#FAFAFA") ?? Brushes.White);
 
             Canvas canvasWater = new Canvas { Height = 190, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16) };
             Canvas canvasTemp = new Canvas { Height = 190, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16) };
@@ -146,9 +146,9 @@ namespace WpfSensorApp
 
             Action applyThemeColors = () =>
             {
-                Brush bg = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#121212") : (Brush)bc.ConvertFrom("#F4F6F9");
-                Brush cardBg = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#1E1E1E") : Brushes.White;
-                Brush cBg = isLoggerDarkMode ? (Brush)bc.ConvertFrom("#252526") : (Brush)bc.ConvertFrom("#FAFAFA");
+                Brush bg = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#121212" : "#F4F6F9") ?? Brushes.White);
+                Brush cardBg = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#1E1E1E" : "#FFFFFF") ?? Brushes.White);
+                Brush cBg = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#252526" : "#FAFAFA") ?? Brushes.White);
 
                 logWindow.Background = bg;
                 headerCard.Background = cardBg;
@@ -158,7 +158,7 @@ namespace WpfSensorApp
                 canvasHum.Background = cBg;
 
                 lblLoggerTheme.Text = isLoggerDarkMode ? "🌙 Nền Tối" : "☀️ Nền Sáng";
-                lblLoggerTheme.Foreground = isLoggerDarkMode ? Brushes.White : (Brush)bc.ConvertFrom("#333333");
+                lblLoggerTheme.Foreground = isLoggerDarkMode ? Brushes.White : (Brush)(bc.ConvertFrom("#333333") ?? Brushes.Black);
             };
 
             Action<string> updateCharts = (mode) =>
@@ -209,11 +209,14 @@ namespace WpfSensorApp
                     }
                 }
 
-                Brush textBrush = isLoggerDarkMode ? Brushes.White : (Brush)bc.ConvertFrom("#212121");
+                Brush textBrush = isLoggerDarkMode ? Brushes.White : (Brush)(bc.ConvertFrom("#212121") ?? Brushes.Black);
+                Brush waterBrush = (Brush)(bc.ConvertFrom("#0288D1") ?? Brushes.Blue);
+                Brush tempBrush = (Brush)(bc.ConvertFrom("#D32F2F") ?? Brushes.Red);
+                Brush humBrush = (Brush)(bc.ConvertFrom("#388E3C") ?? Brushes.Green);
 
-                DrawBarChart(canvasWater, avgWater, xLabels, "BIỂU ĐỒ GIÁM SÁT MỰC NƯỚC THEO THỜI GIAN THỰC (ĐƠN VỊ: CM)", (Brush)bc.ConvertFrom("#0288D1"), 20.0, textBrush);
-                DrawLineChart(canvasTemp, avgTemp, xLabels, "BIỂU ĐỒ GIÁM SÁT NHIỆT ĐỘ MÔI TRƯỜNG (ĐƠN VỊ: °C)", (Brush)bc.ConvertFrom("#D32F2F"), 50.0, textBrush);
-                DrawLineChart(canvasHum, avgHum, xLabels, "BIỂU ĐỒ GIÁM SÁT ĐỘ ẨM KHÔNG KHÍ (ĐƠN VỊ: %)", (Brush)bc.ConvertFrom("#388E3C"), 100.0, textBrush);
+                DrawBarChart(canvasWater, avgWater, xLabels, "BIỂU ĐỒ GIÁM SÁT MỰC NƯỚC THEO THỜI GIAN THỰC (ĐƠN VỊ: CM)", waterBrush, 20.0, textBrush);
+                DrawLineChart(canvasTemp, avgTemp, xLabels, "BIỂU ĐỒ GIÁM SÁT NHIỆT ĐỘ MÔI TRƯỜNG (ĐƠN VỊ: °C)", tempBrush, 50.0, textBrush);
+                DrawLineChart(canvasHum, avgHum, xLabels, "BIỂU ĐỒ GIÁM SÁT ĐỘ ẨM KHÔNG KHÍ (ĐƠN VỊ: %)", humBrush, 100.0, textBrush);
             };
 
             btnDay.Click += (s, e) => updateCharts("DAY");
@@ -267,7 +270,7 @@ namespace WpfSensorApp
             return list;
         }
 
-        private static void DrawBarChart(Canvas canvas, List<double?> values, List<string> timeLabels, string title, Brush barBrush, double maxY, Brush textBrush)
+        private static void DrawBarChart(Canvas canvas, List<double?>? values, List<string>? timeLabels, string title, Brush barBrush, double maxY, Brush textBrush)
         {
             canvas.Children.Clear();
             double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 920;
@@ -284,7 +287,7 @@ namespace WpfSensorApp
             canvas.Children.Add(xAxis);
             canvas.Children.Add(yAxis);
 
-            if (values == null || values.Count == 0) return;
+            if (values == null || values.Count == 0 || timeLabels == null) return;
 
             double drawWidth = width - padLeft - padRight;
             double drawHeight = height - padTop - padBottom;
@@ -302,26 +305,29 @@ namespace WpfSensorApp
                     Line tick = new Line { X1 = slotCenterX, Y1 = height - padBottom, X2 = slotCenterX, Y2 = height - padBottom + 4, Stroke = Brushes.Gray, StrokeThickness = 1 };
                     canvas.Children.Add(tick);
 
-                    TextBlock lbl = new TextBlock { Text = timeLabels[i], FontSize = count > 20 ? 8.5 : 10, Foreground = textBrush, TextAlignment = TextAlignment.Center };
+                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
+                    TextBlock lbl = new TextBlock { Text = labelText, FontSize = count > 20 ? 8.5 : 10, Foreground = textBrush, TextAlignment = TextAlignment.Center };
                     lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                     Canvas.SetLeft(lbl, slotCenterX - (lbl.DesiredSize.Width / 2.0));
                     Canvas.SetTop(lbl, height - padBottom + 5);
                     canvas.Children.Add(lbl);
                 }
 
-                if (values[i].HasValue)
+                double? valNullable = values[i];
+                if (valNullable.HasValue)
                 {
-                    double val = Math.Min(maxY, Math.Max(0, values[i].Value));
+                    double val = Math.Min(maxY, Math.Max(0, valNullable.Value));
                     double barHeight = (val / maxY) * drawHeight;
                     double x = slotCenterX - (barWidth / 2.0);
                     double y = height - padBottom - barHeight;
 
+                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
                     Rectangle rect = new Rectangle
                     {
                         Width = barWidth,
                         Height = barHeight,
                         Fill = barBrush,
-                        ToolTip = $"Mốc: {timeLabels[i]}\nMực nước trung bình: {values[i].Value:F1} cm"
+                        ToolTip = $"Mốc: {labelText}\nMực nước trung bình: {valNullable.Value:F1} cm"
                     };
                     Canvas.SetLeft(rect, x);
                     Canvas.SetTop(rect, y);
@@ -330,7 +336,7 @@ namespace WpfSensorApp
             }
         }
 
-        private static void DrawLineChart(Canvas canvas, List<double?> values, List<string> timeLabels, string title, Brush lineBrush, double maxY, Brush textBrush)
+        private static void DrawLineChart(Canvas canvas, List<double?>? values, List<string>? timeLabels, string title, Brush lineBrush, double maxY, Brush textBrush)
         {
             canvas.Children.Clear();
             double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 920;
@@ -347,7 +353,7 @@ namespace WpfSensorApp
             canvas.Children.Add(xAxis);
             canvas.Children.Add(yAxis);
 
-            if (values == null || values.Count == 0) return;
+            if (values == null || values.Count == 0 || timeLabels == null) return;
 
             double drawWidth = width - padLeft - padRight;
             double drawHeight = height - padTop - padBottom;
@@ -367,26 +373,29 @@ namespace WpfSensorApp
                     Line tick = new Line { X1 = slotCenterX, Y1 = height - padBottom, X2 = slotCenterX, Y2 = height - padBottom + 4, Stroke = Brushes.Gray, StrokeThickness = 1 };
                     canvas.Children.Add(tick);
 
-                    TextBlock lbl = new TextBlock { Text = timeLabels[i], FontSize = count > 20 ? 8.5 : 10, Foreground = textBrush, TextAlignment = TextAlignment.Center };
+                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
+                    TextBlock lbl = new TextBlock { Text = labelText, FontSize = count > 20 ? 8.5 : 10, Foreground = textBrush, TextAlignment = TextAlignment.Center };
                     lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                     Canvas.SetLeft(lbl, slotCenterX - (lbl.DesiredSize.Width / 2.0));
                     Canvas.SetTop(lbl, height - padBottom + 5);
                     canvas.Children.Add(lbl);
                 }
 
-                if (values[i].HasValue)
+                double? valNullable = values[i];
+                if (valNullable.HasValue)
                 {
-                    double val = Math.Min(maxY, Math.Max(0, values[i].Value));
+                    double val = Math.Min(maxY, Math.Max(0, valNullable.Value));
                     double y = height - padBottom - (val / maxY) * drawHeight;
 
                     points.Add(new Point(slotCenterX, y));
 
+                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
                     Ellipse dot = new Ellipse
                     {
                         Width = 6,
                         Height = 6,
                         Fill = lineBrush,
-                        ToolTip = $"Mốc: {timeLabels[i]}\nGiá trị trung bình: {values[i].Value:F1}"
+                        ToolTip = $"Mốc: {labelText}\nGiá trị trung bình: {valNullable.Value:F1}"
                     };
                     Canvas.SetLeft(dot, slotCenterX - 3);
                     Canvas.SetTop(dot, y - 3);
@@ -402,7 +411,7 @@ namespace WpfSensorApp
     public class LogModel
     {
         public DateTime Timestamp { get; set; }
-        public string TimeStr { get; set; }
+        public string TimeStr { get; set; } = string.Empty;
         public double WaterLevel { get; set; }
         public double Temperature { get; set; }
         public double Humidity { get; set; }
