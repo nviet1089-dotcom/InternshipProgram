@@ -815,12 +815,36 @@ namespace WpfSensorApp
         {
             try
             {
+                // 1. Đóng cổng Serial Port
                 if (_serialPort.IsOpen) _serialPort.Close();
+
+                // 2. Cập nhật lại các nút điều khiển
                 btnConnect.IsEnabled = true;
                 btnDisconnect.IsEnabled = false;
                 cboComPorts.IsEnabled = true;
                 btnRefresh.IsEnabled = true;
 
+                // 3. Reset các giá trị hiển thị về mặc định
+                ViewModel.Temperature = "-- °C";
+                ViewModel.Humidity = "-- %";
+
+                // 4. Reset biến dữ liệu và tắt trạng thái Cảnh báo
+                _currentTemp = 0.0;
+                _currentHum = 0.0;
+                _isTempAlarm = false;
+                _isHumAlarm = false;
+
+                // 5. Khôi phục lại màu nền mặc định cho ô Nhiệt độ & Độ ẩm (Tắt nháy đỏ)
+                BrushConverter bc = new BrushConverter();
+                cardTemp.Background = _isDarkMode 
+                    ? (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen) 
+                    : (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
+
+                cardHum.Background = _isDarkMode 
+                    ? (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen) 
+                    : (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
+
+                // 6. Cập nhật lại thanh trạng thái
                 ViewModel.StatusText = "Trạng thái: Đã ngắt kết nối";
                 ViewModel.StatusColor = MediaBrushes.Gray;
             }
