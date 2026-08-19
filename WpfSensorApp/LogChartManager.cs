@@ -27,12 +27,13 @@ namespace WpfSensorApp
 
             BrushConverter bc = new BrushConverter();
             bool isLoggerDarkMode = isDarkMode;
+            string currentMode = "DAY"; // Lưu chế độ lọc hiện tại
 
             Window logWindow = new Window
             {
                 Title = "NHẬT KÝ VÀ BIỂU ĐỒ LỊCH SỬ DỮ LIỆU CẢM BIẾN",
-                Width = 1000,
-                Height = 800,
+                Width = 1100,
+                Height = 820,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = ownerWindow,
                 Background = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#121212" : "#F4F6F9") ?? Brushes.White)
@@ -42,7 +43,7 @@ namespace WpfSensorApp
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             mainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-            // 1. KHUNG CHỨA 3 NÚT LỌC VÀ NÚT ĐỔI THEME
+            // 1. HEADER CARD
             Border headerCard = new Border
             {
                 Background = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#1E1E1E" : "#FFFFFF") ?? Brushes.White),
@@ -110,7 +111,7 @@ namespace WpfSensorApp
             headerCard.Child = headerGrid;
             Grid.SetRow(headerCard, 0);
 
-            // 2. KHUNG HIỂN THỊ BIỂU ĐỒ
+            // 2. CHART AREA CARD
             Border chartCard = new Border
             {
                 Background = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#1E1E1E" : "#FFFFFF") ?? Brushes.White),
@@ -128,9 +129,9 @@ namespace WpfSensorApp
             StackPanel chartStack = new StackPanel();
             Brush canvasBg = (Brush)(bc.ConvertFrom(isLoggerDarkMode ? "#252526" : "#FAFAFA") ?? Brushes.White);
 
-            Canvas canvasWater = new Canvas { Height = 190, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16) };
-            Canvas canvasTemp = new Canvas { Height = 190, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16) };
-            Canvas canvasHum = new Canvas { Height = 190, Background = canvasBg, Margin = new Thickness(0, 0, 0, 5) };
+            Canvas canvasWater = new Canvas { Height = 220, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16), HorizontalAlignment = HorizontalAlignment.Stretch };
+            Canvas canvasTemp = new Canvas { Height = 220, Background = canvasBg, Margin = new Thickness(0, 0, 0, 16), HorizontalAlignment = HorizontalAlignment.Stretch };
+            Canvas canvasHum = new Canvas { Height = 220, Background = canvasBg, Margin = new Thickness(0, 0, 0, 5), HorizontalAlignment = HorizontalAlignment.Stretch };
 
             chartStack.Children.Add(canvasWater);
             chartStack.Children.Add(canvasTemp);
@@ -163,6 +164,7 @@ namespace WpfSensorApp
 
             Action<string> updateCharts = (mode) =>
             {
+                currentMode = mode;
                 DateTime now = DateTime.Now;
                 List<string> xLabels = new List<string>();
                 List<double?> avgWater = new List<double?>();
@@ -214,9 +216,9 @@ namespace WpfSensorApp
                 Brush tempBrush = (Brush)(bc.ConvertFrom("#D32F2F") ?? Brushes.Red);
                 Brush humBrush = (Brush)(bc.ConvertFrom("#388E3C") ?? Brushes.Green);
 
-                DrawBarChart(canvasWater, avgWater, xLabels, "BIỂU ĐỒ GIÁM SÁT MỰC NƯỚC THEO THỜI GIAN THỰC (ĐƠN VỊ: CM)", waterBrush, 20.0, textBrush);
-                DrawLineChart(canvasTemp, avgTemp, xLabels, "BIỂU ĐỒ GIÁM SÁT NHIỆT ĐỘ MÔI TRƯỜNG (ĐƠN VỊ: °C)", tempBrush, 50.0, textBrush);
-                DrawLineChart(canvasHum, avgHum, xLabels, "BIỂU ĐỒ GIÁM SÁT ĐỘ ẨM KHÔNG KHÍ (ĐƠN VỊ: %)", humBrush, 100.0, textBrush);
+                DrawBarChart(canvasWater, avgWater, xLabels, $"BIỂU ĐỒ MỰC NƯỚC TRUNG BÌNH ({mode}) - ĐƠN VỊ: CM", waterBrush, 20.0, textBrush);
+                DrawLineChart(canvasTemp, avgTemp, xLabels, $"BIỂU ĐỒ NHIỆT ĐỘ TRUNG BÌNH ({mode}) - ĐƠN VỊ: °C", tempBrush, 50.0, textBrush);
+                DrawLineChart(canvasHum, avgHum, xLabels, $"BIỂU ĐỒ ĐỘ ẨM TRUNG BÌNH ({mode}) - ĐƠN VỊ: %", humBrush, 100.0, textBrush);
             };
 
             btnDay.Click += (s, e) => updateCharts("DAY");
@@ -227,7 +229,16 @@ namespace WpfSensorApp
             {
                 isLoggerDarkMode = toggleLoggerTheme.IsChecked ?? false;
                 applyThemeColors();
-                updateCharts("DAY");
+                updateCharts(currentMode);
+            };
+
+            // THÊM SỰ KIỆN TỰ VẼ LẠI KHI THAY ĐỔI KÍCH THƯỚC CỬA SỔ / PHÓNG TO
+            logWindow.SizeChanged += (s, e) =>
+            {
+                if (logWindow.IsLoaded)
+                {
+                    updateCharts(currentMode);
+                }
             };
 
             logWindow.Loaded += (s, e) => updateCharts("DAY");
@@ -273,9 +284,9 @@ namespace WpfSensorApp
         private static void DrawBarChart(Canvas canvas, List<double?>? values, List<string>? timeLabels, string title, Brush barBrush, double maxY, Brush textBrush)
         {
             canvas.Children.Clear();
-            double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 920;
-            double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 190;
-            double padLeft = 45, padBottom = 35, padTop = 30, padRight = 20;
+            double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 900;
+            double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 220;
+            double padLeft = 45, padBottom = 40, padTop = 30, padRight = 20;
 
             TextBlock txtTitle = new TextBlock { Text = title, FontWeight = FontWeights.Bold, Foreground = textBrush, FontSize = 12 };
             Canvas.SetLeft(txtTitle, 10);
@@ -293,25 +304,34 @@ namespace WpfSensorApp
             double drawHeight = height - padTop - padBottom;
             int count = values.Count;
             double slotWidth = drawWidth / count;
-            double barWidth = Math.Max(2, slotWidth * 0.6);
-            int labelStep = count > 20 ? 2 : 1;
+            double barWidth = Math.Max(2.0, slotWidth * 0.55);
 
             for (int i = 0; i < count; i++)
             {
                 double slotCenterX = padLeft + i * slotWidth + slotWidth / 2.0;
 
-                if (i % labelStep == 0 || i == count - 1)
-                {
-                    Line tick = new Line { X1 = slotCenterX, Y1 = height - padBottom, X2 = slotCenterX, Y2 = height - padBottom + 4, Stroke = Brushes.Gray, StrokeThickness = 1 };
-                    canvas.Children.Add(tick);
+                Line tick = new Line { X1 = slotCenterX, Y1 = height - padBottom, X2 = slotCenterX, Y2 = height - padBottom + 4, Stroke = Brushes.Gray, StrokeThickness = 1 };
+                canvas.Children.Add(tick);
 
-                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
-                    TextBlock lbl = new TextBlock { Text = labelText, FontSize = count > 20 ? 8.5 : 10, Foreground = textBrush, TextAlignment = TextAlignment.Center };
-                    lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                    Canvas.SetLeft(lbl, slotCenterX - (lbl.DesiredSize.Width / 2.0));
-                    Canvas.SetTop(lbl, height - padBottom + 5);
-                    canvas.Children.Add(lbl);
+                string labelText = i < timeLabels.Count ? timeLabels[i] : "";
+                TextBlock lbl = new TextBlock 
+                { 
+                    Text = labelText, 
+                    FontSize = count > 20 ? 8.0 : 10.0, 
+                    Foreground = textBrush, 
+                    TextAlignment = TextAlignment.Center 
+                };
+
+                if (count > 20)
+                {
+                    lbl.RenderTransform = new RotateTransform(-45);
+                    lbl.RenderTransformOrigin = new Point(0.5, 0.5);
                 }
+
+                lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                Canvas.SetLeft(lbl, slotCenterX - (lbl.DesiredSize.Width / 2.0));
+                Canvas.SetTop(lbl, height - padBottom + 6);
+                canvas.Children.Add(lbl);
 
                 double? valNullable = values[i];
                 if (valNullable.HasValue)
@@ -321,13 +341,12 @@ namespace WpfSensorApp
                     double x = slotCenterX - (barWidth / 2.0);
                     double y = height - padBottom - barHeight;
 
-                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
                     Rectangle rect = new Rectangle
                     {
                         Width = barWidth,
                         Height = barHeight,
                         Fill = barBrush,
-                        ToolTip = $"Mốc: {labelText}\nMực nước trung bình: {valNullable.Value:F1} cm"
+                        ToolTip = $"Thời gian: {labelText}\nMực nước trung bình: {valNullable.Value:F1} cm"
                     };
                     Canvas.SetLeft(rect, x);
                     Canvas.SetTop(rect, y);
@@ -339,9 +358,9 @@ namespace WpfSensorApp
         private static void DrawLineChart(Canvas canvas, List<double?>? values, List<string>? timeLabels, string title, Brush lineBrush, double maxY, Brush textBrush)
         {
             canvas.Children.Clear();
-            double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 920;
-            double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 190;
-            double padLeft = 45, padBottom = 35, padTop = 30, padRight = 20;
+            double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 900;
+            double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 220;
+            double padLeft = 45, padBottom = 40, padTop = 30, padRight = 20;
 
             TextBlock txtTitle = new TextBlock { Text = title, FontWeight = FontWeights.Bold, Foreground = textBrush, FontSize = 12 };
             Canvas.SetLeft(txtTitle, 10);
@@ -359,27 +378,37 @@ namespace WpfSensorApp
             double drawHeight = height - padTop - padBottom;
             int count = values.Count;
             double slotWidth = drawWidth / count;
-            int labelStep = count > 20 ? 2 : 1;
 
             Polyline polyline = new Polyline { Stroke = lineBrush, StrokeThickness = 2 };
             PointCollection points = new PointCollection();
+            List<UIElement> overlayDots = new List<UIElement>();
 
             for (int i = 0; i < count; i++)
             {
                 double slotCenterX = padLeft + i * slotWidth + slotWidth / 2.0;
 
-                if (i % labelStep == 0 || i == count - 1)
-                {
-                    Line tick = new Line { X1 = slotCenterX, Y1 = height - padBottom, X2 = slotCenterX, Y2 = height - padBottom + 4, Stroke = Brushes.Gray, StrokeThickness = 1 };
-                    canvas.Children.Add(tick);
+                Line tick = new Line { X1 = slotCenterX, Y1 = height - padBottom, X2 = slotCenterX, Y2 = height - padBottom + 4, Stroke = Brushes.Gray, StrokeThickness = 1 };
+                canvas.Children.Add(tick);
 
-                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
-                    TextBlock lbl = new TextBlock { Text = labelText, FontSize = count > 20 ? 8.5 : 10, Foreground = textBrush, TextAlignment = TextAlignment.Center };
-                    lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                    Canvas.SetLeft(lbl, slotCenterX - (lbl.DesiredSize.Width / 2.0));
-                    Canvas.SetTop(lbl, height - padBottom + 5);
-                    canvas.Children.Add(lbl);
+                string labelText = i < timeLabels.Count ? timeLabels[i] : "";
+                TextBlock lbl = new TextBlock 
+                { 
+                    Text = labelText, 
+                    FontSize = count > 20 ? 8.0 : 10.0, 
+                    Foreground = textBrush, 
+                    TextAlignment = TextAlignment.Center 
+                };
+
+                if (count > 20)
+                {
+                    lbl.RenderTransform = new RotateTransform(-45);
+                    lbl.RenderTransformOrigin = new Point(0.5, 0.5);
                 }
+
+                lbl.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                Canvas.SetLeft(lbl, slotCenterX - (lbl.DesiredSize.Width / 2.0));
+                Canvas.SetTop(lbl, height - padBottom + 6);
+                canvas.Children.Add(lbl);
 
                 double? valNullable = values[i];
                 if (valNullable.HasValue)
@@ -389,22 +418,26 @@ namespace WpfSensorApp
 
                     points.Add(new Point(slotCenterX, y));
 
-                    string labelText = i < timeLabels.Count ? timeLabels[i] : "";
                     Ellipse dot = new Ellipse
                     {
-                        Width = 6,
-                        Height = 6,
+                        Width = count > 20 ? 4 : 6,
+                        Height = count > 20 ? 4 : 6,
                         Fill = lineBrush,
-                        ToolTip = $"Mốc: {labelText}\nGiá trị trung bình: {valNullable.Value:F1}"
+                        ToolTip = $"Thời gian: {labelText}\nGiá trị trung bình: {valNullable.Value:F1}"
                     };
-                    Canvas.SetLeft(dot, slotCenterX - 3);
-                    Canvas.SetTop(dot, y - 3);
-                    canvas.Children.Add(dot);
+                    Canvas.SetLeft(dot, slotCenterX - (dot.Width / 2.0));
+                    Canvas.SetTop(dot, y - (dot.Height / 2.0));
+                    overlayDots.Add(dot);
                 }
             }
 
             polyline.Points = points;
             canvas.Children.Add(polyline);
+
+            foreach (var dot in overlayDots)
+            {
+                canvas.Children.Add(dot);
+            }
         }
     }
 

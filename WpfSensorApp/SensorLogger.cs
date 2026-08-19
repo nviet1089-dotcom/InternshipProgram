@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace WpfSensorApp
@@ -44,12 +45,27 @@ namespace WpfSensorApp
             {
                 if (_getDataDelegate == null) return;
 
-                var data = _getDataDelegate();
+                (string Temp, string Hum, string Water) data = ("", "", "");
+
+                if (Application.Current != null && Application.Current.Dispatcher != null)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        data = _getDataDelegate();
+                    });
+                }
+                else
+                {
+                    data = _getDataDelegate();
+                }
+
                 string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 
                 string temp = data.Temp?.Replace(" °C", "").Replace(',', '.').Trim() ?? "--";
                 string hum = data.Hum?.Replace(" %", "").Replace(',', '.').Trim() ?? "--";
                 string water = data.Water?.Replace(" cm", "").Replace(',', '.').Trim() ?? "--";
+
+                if (temp == "--" || hum == "--" || water == "--.--") return;
 
                 string csvLine = $"{timestamp},{temp},{hum},{water}\n";
                 File.AppendAllText(_logFilePath, csvLine, Encoding.UTF8);

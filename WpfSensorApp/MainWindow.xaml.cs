@@ -289,14 +289,14 @@ namespace WpfSensorApp
             btnToggleOverlay.Background = _showOverlay ? _colorRed : _colorGreen;
         }
 
-       private void toggleDarkMode_Click(object sender, RoutedEventArgs e)
-{
-    if (sender is CheckBox toggle)
-    {
-        _isDarkMode = toggle.IsChecked ?? false;
-        ApplyTheme(_isDarkMode);
-    }
-}
+        private void toggleDarkMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox toggle)
+            {
+                _isDarkMode = toggle.IsChecked ?? false;
+                ApplyTheme(_isDarkMode);
+            }
+        }
 
         private void ApplyTheme(bool isDark)
         {
@@ -357,26 +357,24 @@ namespace WpfSensorApp
                         _capture.Retrieve(rawFrame);
                         if (rawFrame.IsEmpty) return;
 
-                        Mat originalMat = rawFrame.Clone();
-                        BitmapImage originalBitmap = ConvertMatToBitmapImage(originalMat);
+                        using (Mat originalMat = rawFrame.Clone())
+                        using (Mat correctedMat = CorrectPerspectiveFrame(rawFrame))
+                        {
+                            BitmapImage originalBitmap = ConvertMatToBitmapImage(originalMat);
+                            BitmapImage correctedBitmap = ConvertMatToBitmapImage(correctedMat);
 
-                        Mat correctedMat = CorrectPerspectiveFrame(rawFrame);
-                        BitmapImage correctedBitmap = ConvertMatToBitmapImage(correctedMat);
+                            string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
+                            if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
 
-                        string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Screenshots");
-                        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
+                            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                            string pathOrig = Path.Combine(folderPath, $"Original_Tilted_{timestamp}.png");
+                            string pathCorrected = Path.Combine(folderPath, $"Corrected_Straight_{timestamp}.png");
 
-                        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                        string pathOrig = Path.Combine(folderPath, $"Original_Tilted_{timestamp}.png");
-                        string pathCorrected = Path.Combine(folderPath, $"Corrected_Straight_{timestamp}.png");
+                            SaveBitmapImageToFile(originalBitmap, pathOrig);
+                            SaveBitmapImageToFile(correctedBitmap, pathCorrected);
 
-                        SaveBitmapImageToFile(originalBitmap, pathOrig);
-                        SaveBitmapImageToFile(correctedBitmap, pathCorrected);
-
-                        ShowDualImagePreviewWindow(originalBitmap, correctedBitmap, pathOrig, pathCorrected);
-
-                        originalMat.Dispose();
-                        correctedMat.Dispose();
+                            ShowDualImagePreviewWindow(originalBitmap, correctedBitmap, pathOrig, pathCorrected);
+                        }
                     }
                 }
                 else
@@ -449,6 +447,7 @@ namespace WpfSensorApp
                     {
                         Mat warped = new Mat();
                         CvInvoke.WarpPerspective(src, warped, M, new Size((int)width, (int)height));
+                        corrected.Dispose();
                         return warped;
                     }
                 }
@@ -616,137 +615,134 @@ namespace WpfSensorApp
             _frameCounter++;
 
             using (Mat gray = new Mat())
+            using (Mat edges = new Mat())
             {
                 CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
                 CvInvoke.GaussianBlur(gray, gray, new Size(5, 5), 0);
+                CvInvoke.Canny(gray, edges, 35, 110);
 
-                using (Mat edges = new Mat())
+                System.Drawing.Rectangle currentContainer = System.Drawing.Rectangle.Empty;
+                double minDistanceToCamera = double.MaxValue;
+                double minAreaThreshold = image.Width * image.Height * 0.008;
+
+                Point cameraAnchor = new Point(image.Width / 2, image.Height);
+
+                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                 {
-                    CvInvoke.Canny(gray, edges, 35, 110);
+                    CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
 
-                    System.Drawing.Rectangle currentContainer = System.Drawing.Rectangle.Empty;
-                    double minDistanceToCamera = double.MaxValue;
-                    double minAreaThreshold = image.Width * image.Height * 0.008;
-
-                    Point cameraAnchor = new Point(image.Width / 2, image.Height);
-
-                    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                    for (int i = 0; i < contours.Size; i++)
                     {
-                        CvInvoke.FindContours(edges, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                        System.Drawing.Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
+                        double area = rect.Width * rect.Height;
 
-                        for (int i = 0; i < contours.Size; i++)
+                        if (rect.X <= 2 || rect.Y <= 2 || rect.Right >= image.Width - 2 || rect.Bottom >= image.Height - 2)
+                            continue;
+
+                        if (area > minAreaThreshold)
                         {
-                            System.Drawing.Rectangle rect = CvInvoke.BoundingRectangle(contours[i]);
-                            double area = rect.Width * rect.Height;
+                            Point rectBottomCenter = new Point(rect.X + rect.Width / 2, rect.Bottom);
+                            double dist = Math.Sqrt(Math.Pow(rectBottomCenter.X - cameraAnchor.X, 2) + Math.Pow(rectBottomCenter.Y - cameraAnchor.Y, 2));
 
-                            if (rect.X <= 2 || rect.Y <= 2 || rect.Right >= image.Width - 2 || rect.Bottom >= image.Height - 2)
-                                continue;
-
-                            if (area > minAreaThreshold)
+                            if (dist < minDistanceToCamera)
                             {
-                                Point rectBottomCenter = new Point(rect.X + rect.Width / 2, rect.Bottom);
-                                double dist = Math.Sqrt(Math.Pow(rectBottomCenter.X - cameraAnchor.X, 2) + Math.Pow(rectBottomCenter.Y - cameraAnchor.Y, 2));
-
-                                if (dist < minDistanceToCamera)
-                                {
-                                    minDistanceToCamera = dist;
-                                    currentContainer = rect;
-                                }
+                                minDistanceToCamera = dist;
+                                currentContainer = rect;
                             }
                         }
                     }
-
-                    if (!currentContainer.IsEmpty)
-                    {
-                        if (_smoothedW < 0)
-                        {
-                            _smoothedX = currentContainer.X;
-                            _smoothedY = currentContainer.Y;
-                            _smoothedW = currentContainer.Width;
-                            _smoothedH = currentContainer.Height;
-                        }
-                        else
-                        {
-                            double alphaPos = 0.03;
-                            double alphaSize = 0.025;
-
-                            _smoothedX = _smoothedX * (1.0 - alphaPos) + currentContainer.X * alphaPos;
-                            _smoothedY = _smoothedY * (1.0 - alphaPos) + currentContainer.Y * alphaPos;
-                            _smoothedW = _smoothedW * (1.0 - alphaSize) + currentContainer.Width * alphaSize;
-                            _smoothedH = _smoothedH * (1.0 - alphaSize) + currentContainer.Height * alphaSize;
-                        }
-
-                        _smoothedContainer = new System.Drawing.Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
-                    }
-
-                    _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
-
-                    if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
-                    {
-                        using (Mat blurredBg = new Mat())
-                        using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
-                        {
-                            CvInvoke.GaussianBlur(image, blurredBg, new Size(45, 45), 0);
-                            mask.SetTo(new MCvScalar(0));
-                            CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
-
-                            image.CopyTo(blurredBg, mask);
-                            blurredBg.CopyTo(image);
-                        }
-                    }
-
-                    if (_smoothedContainer.IsEmpty) return 0.0;
-
-                    double currentWaterY = _smoothedContainer.Bottom;
-
-                    if (_frameCounter % 10 == 0 || _lastDetectedWaterY < 0)
-                    {
-                        LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
-
-                        foreach (var line in lines)
-                        {
-                            if (line.P1.X >= _smoothedContainer.Left - 10 && line.P2.X <= _smoothedContainer.Right + 10 &&
-                                Math.Abs(line.P1.Y - line.P2.Y) < 12)
-                            {
-                                double lineY = (line.P1.Y + line.P2.Y) / 2.0;
-                                if (lineY > _smoothedContainer.Top && lineY < _smoothedContainer.Bottom)
-                                {
-                                    currentWaterY = lineY;
-                                    break;
-                                }
-                            }
-                        }
-                        _lastDetectedWaterY = currentWaterY;
-                    }
-                    else
-                    {
-                        currentWaterY = _lastDetectedWaterY;
-                    }
-
-                    if (_smoothedWaterY < 0)
-                    {
-                        _smoothedWaterY = currentWaterY;
-                    }
-                    else
-                    {
-                        _smoothedWaterY = _smoothedWaterY * 0.985 + currentWaterY * 0.015;
-                    }
-
-                    _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
-
-                    if (_showOverlay && !_smoothedContainer.IsEmpty)
-                    {
-                        CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
-                        CvInvoke.Line(image,
-                            new Point(0, (int)_smoothedWaterY),
-                            new Point(image.Width - 1, (int)_smoothedWaterY),
-                            new MCvScalar(0, 0, 255), 3);
-                    }
-
-                    double waterPixels = _smoothedContainer.Bottom - _smoothedWaterY;
-                    double scaleLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
-                    return Math.Min(10.0, Math.Max(0.0, scaleLevel));
                 }
+
+                if (!currentContainer.IsEmpty)
+                {
+                    if (_smoothedW < 0)
+                    {
+                        _smoothedX = currentContainer.X;
+                        _smoothedY = currentContainer.Y;
+                        _smoothedW = currentContainer.Width;
+                        _smoothedH = currentContainer.Height;
+                    }
+                    else
+                    {
+                        double alphaPos = 0.03;
+                        double alphaSize = 0.025;
+
+                        _smoothedX = _smoothedX * (1.0 - alphaPos) + currentContainer.X * alphaPos;
+                        _smoothedY = _smoothedY * (1.0 - alphaPos) + currentContainer.Y * alphaPos;
+                        _smoothedW = _smoothedW * (1.0 - alphaSize) + currentContainer.Width * alphaSize;
+                        _smoothedH = _smoothedH * (1.0 - alphaSize) + currentContainer.Height * alphaSize;
+                    }
+
+                    _smoothedContainer = new System.Drawing.Rectangle((int)_smoothedX, (int)_smoothedY, (int)_smoothedW, (int)_smoothedH);
+                }
+
+                _smoothedContainer = ClampRectangle(_smoothedContainer, image.Size);
+
+                if (_isBackgroundActive && !_smoothedContainer.IsEmpty)
+                {
+                    using (Mat blurredBg = new Mat())
+                    using (Mat mask = new Mat(image.Size, DepthType.Cv8U, 1))
+                    {
+                        CvInvoke.GaussianBlur(image, blurredBg, new Size(45, 45), 0);
+                        mask.SetTo(new MCvScalar(0));
+                        CvInvoke.Rectangle(mask, _smoothedContainer, new MCvScalar(255), -1);
+
+                        image.CopyTo(blurredBg, mask);
+                        blurredBg.CopyTo(image);
+                    }
+                }
+
+                if (_smoothedContainer.IsEmpty) return 0.0;
+
+                double currentWaterY = _smoothedContainer.Bottom;
+
+                if (_frameCounter % 10 == 0 || _lastDetectedWaterY < 0)
+                {
+                    LineSegment2D[] lines = CvInvoke.HoughLinesP(edges, 1, Math.PI / 180, 30, 30, 10);
+
+                    foreach (var line in lines)
+                    {
+                        if (line.P1.X >= _smoothedContainer.Left - 10 && line.P2.X <= _smoothedContainer.Right + 10 &&
+                            Math.Abs(line.P1.Y - line.P2.Y) < 12)
+                        {
+                            double lineY = (line.P1.Y + line.P2.Y) / 2.0;
+                            if (lineY > _smoothedContainer.Top && lineY < _smoothedContainer.Bottom)
+                            {
+                                currentWaterY = lineY;
+                                break;
+                            }
+                        }
+                    }
+                    _lastDetectedWaterY = currentWaterY;
+                }
+                else
+                {
+                    currentWaterY = _lastDetectedWaterY;
+                }
+
+                if (_smoothedWaterY < 0)
+                {
+                    _smoothedWaterY = currentWaterY;
+                }
+                else
+                {
+                    _smoothedWaterY = _smoothedWaterY * 0.985 + currentWaterY * 0.015;
+                }
+
+                _smoothedWaterY = Math.Max(_smoothedContainer.Top, Math.Min(_smoothedContainer.Bottom, _smoothedWaterY));
+
+                if (_showOverlay && !_smoothedContainer.IsEmpty)
+                {
+                    CvInvoke.Rectangle(image, _smoothedContainer, new MCvScalar(0, 220, 0), 2);
+                    CvInvoke.Line(image,
+                        new Point(0, (int)_smoothedWaterY),
+                        new Point(image.Width - 1, (int)_smoothedWaterY),
+                        new MCvScalar(0, 0, 255), 3);
+                }
+
+                double waterPixels = _smoothedContainer.Bottom - _smoothedWaterY;
+                double scaleLevel = (waterPixels / (double)_smoothedContainer.Height) * 10.0;
+                return Math.Min(10.0, Math.Max(0.0, scaleLevel));
             }
         }
 
