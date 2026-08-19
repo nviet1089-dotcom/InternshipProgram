@@ -49,7 +49,7 @@ namespace WpfSensorApp
 
         private double _tempThreshold = 35.0;
         private double _humThreshold = 80.0;
-        private double _waterThreshold = 8.0;
+        private double _waterThreshold = 16.0; // Mặc định 16.0 cm (tương đương 80% chiều cao 20 cm)
 
         private double _currentTemp = 0.0;
         private double _currentHum = 0.0;
@@ -241,7 +241,7 @@ namespace WpfSensorApp
                 string waterStr = txtWaterThreshold.Text.Replace(',', '.');
                 if (double.TryParse(waterStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double water))
                 {
-                    _waterThreshold = water;
+                    _waterThreshold = water; // Đã lưu dạng cm
                 }
             }
         }
@@ -559,12 +559,14 @@ namespace WpfSensorApp
                     double scaleLevel = ProcessContainerAndWaterLevel(processedFrame);
                     _currentWaterScale = scaleLevel;
 
-                    _isWaterAlarm = _isViewActive && (_currentWaterScale >= _waterThreshold);
-
                     double scaleRatio = scaleLevel / 10.0;
                     _currentScaleRatio = scaleRatio;
 
+                    // Tính chiều cao thực tế bằng cm
                     double waterHeightCm = scaleRatio * MAX_WATER_HEIGHT_CM;
+
+                    // So sánh trực tiếp chiều cao mực nước (cm) với ngưỡng nhập vào (cm)
+                    _isWaterAlarm = _isViewActive && (waterHeightCm >= _waterThreshold);
 
                     BitmapImage bitmapImage = ConvertMatToBitmapImage(processedFrame);
 
@@ -577,6 +579,7 @@ namespace WpfSensorApp
 
                             BrushConverter bc = new BrushConverter();
 
+                            // Màu sắc hiển thị vẫn theo các thang mức cảnh báo
                             if (scaleLevel >= 8.0)
                             {
                                 ViewModel.WaterLevelColor = (Brush)(bc.ConvertFrom("#FFE53935") ?? Brushes.Red);
@@ -815,26 +818,21 @@ namespace WpfSensorApp
         {
             try
             {
-                // 1. Đóng cổng Serial Port
                 if (_serialPort.IsOpen) _serialPort.Close();
 
-                // 2. Cập nhật lại các nút điều khiển
                 btnConnect.IsEnabled = true;
                 btnDisconnect.IsEnabled = false;
                 cboComPorts.IsEnabled = true;
                 btnRefresh.IsEnabled = true;
 
-                // 3. Reset các giá trị hiển thị về mặc định
                 ViewModel.Temperature = "-- °C";
                 ViewModel.Humidity = "-- %";
 
-                // 4. Reset biến dữ liệu và tắt trạng thái Cảnh báo
                 _currentTemp = 0.0;
                 _currentHum = 0.0;
                 _isTempAlarm = false;
                 _isHumAlarm = false;
 
-                // 5. Khôi phục lại màu nền mặc định cho ô Nhiệt độ & Độ ẩm (Tắt nháy đỏ)
                 BrushConverter bc = new BrushConverter();
                 cardTemp.Background = _isDarkMode 
                     ? (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen) 
@@ -844,7 +842,6 @@ namespace WpfSensorApp
                     ? (Brush)(bc.ConvertFrom("#1E2A1E") ?? Brushes.DarkGreen) 
                     : (Brush)(bc.ConvertFrom("#FFE8F5E9") ?? Brushes.LightGreen);
 
-                // 6. Cập nhật lại thanh trạng thái
                 ViewModel.StatusText = "Trạng thái: Đã ngắt kết nối";
                 ViewModel.StatusColor = MediaBrushes.Gray;
             }
